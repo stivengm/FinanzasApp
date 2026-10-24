@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed": "#ffdada", "primary": "#000000", "on-primary": "#ffffff", "on-secondary-fixed-variant": "#005236", "outline": "#74777d", "surface-container-highest": "#e0e3e5", "inverse-on-surface": "#eff1f3", "error": "#ba1a1a", "surface-container-low": "#f2f4f6", "surface-bright": "#f7f9fb", "on-background": "#191c1e", "on-error": "#ffffff", "secondary-fixed": "#81f9c1", "on-primary-fixed-variant": "#3a4859", "error-container": "#ffdad6", "surface-container": "#eceef0", "primary-fixed": "#d6e4f9", "on-tertiary-container": "#f83256", "tertiary-fixed-dim": "#ffb3b6", "surface": "#f7f9fb", "inverse-surface": "#2d3133", "tertiary-container": "#40000c", "on-primary-fixed": "#0f1c2c", "secondary": "#006c49", "tertiary": "#000000", "on-tertiary-fixed": "#40000c", "on-surface": "#191c1e", "primary-container": "#0f1c2c", "on-surface-variant": "#44474c", "background": "#f7f9fb", "surface-dim": "#d8dadc", "primary-fixed-dim": "#bac8dc", "surface-container-lowest": "#ffffff", "on-error-container": "#93000a", "on-secondary-fixed": "#002113", "surface-variant": "#e0e3e5", "on-primary-container": "#778598", "inverse-primary": "#bac8dc", "secondary-container": "#7ef6be", "on-tertiary": "#ffffff", "on-secondary-container": "#00714c", "surface-container-high": "#e6e8ea", "on-tertiary-fixed-variant": "#920028", "secondary-fixed-dim": "#63dca6", "surface-tint": "#525f71", "outline-variant": "#c4c6cc", "on-secondary": "#ffffff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "1rem", "margin-tablet": "2rem", "margin-desktop": "3rem", "space-xl": "2rem", "space-md": "1rem", "margin": "1rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "gutter-lg": "1.5rem", "gutter-sm": "0.5rem", "space-lg": "1.5rem" }, fontFamily: { "body-sm": ["Manrope"], "headline-sm": ["Plus Jakarta Sans"], "label-md": ["Manrope"], "body-md": ["Manrope"], "display-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "numeric-hero": ["Plus Jakarta Sans"], "body-lg": ["Manrope"], "display-lg-mobile": ["Plus Jakarta Sans"], "label-micro": ["JetBrains Mono"], "headline-md": ["Plus Jakarta Sans"], "numeric-table": ["JetBrains Mono"] }, fontSize: { "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "headline-lg": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "numeric-hero": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "display-lg-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.025em", "fontWeight": "700" }], "label-micro": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "numeric-table": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="FinanzSync Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi-dC-pmOE6NE9mDhHXIjFE-6hQS9-6jiEzWHUm4FXtxk8sgMvbhFkVtkiYk8lXp-Fh4sGgmCcbIaXMDNRAgxXFUAX_Fmc1ZxRBcf-ei3nn0f1KWPZt4vO8kgN-Mfm-NESM6sGOckCMRHLZRms4OdeTw5VVsajIgs1nGcC2IurJ35EvS_5aoMB4UqcVZLZPQjyBmI212MwvGLKxBNhU25DSpkIK-DdBUz46dLOMfIZ"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate">FinanzSync</span><span class="text-outline-variant font-headline-sm text-headline-sm">/</span><span class="font-headline-sm text-headline-sm text-on-surface-variant truncate">Estadísticas &amp; Sheets</span></div><div class="inline-flex items-center gap-1.5 py-0.5 px-2 bg-secondary-container/30 rounded-full w-fit"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-label-micro text-label-micro text-secondary font-semibold uppercase tracking-wider">Sheets Conectado</span></div></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button aria-label="Notificaciones" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors relative"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-28 px-margin bg-surface"><div class="flex flex-col w-full gap-space-lg">
+<!-- Month Selector & Title Section -->
+<section class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-micro text-label-micro text-on-surface-variant uppercase tracking-wider">Telemetría Contable</span>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Analítica &amp; Sheets</h1>
+</div>
+<!-- Interactive Period Selector -->
+<div class="inline-flex items-center gap-space-xs bg-surface-container-high px-space-sm py-1.5 rounded-full shadow-sm">
+<button aria-label="Mes anterior" class="w-6 h-6 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-transform active:scale-90" id="prev-month-btn">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<span class="font-headline-sm text-headline-sm text-on-surface px-1 select-none" id="current-month-label">Octubre 2024</span>
+<button aria-label="Mes siguiente" class="w-6 h-6 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-transform active:scale-90" id="next-month-btn">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Financial Health Snapshot Pills -->
+<section class="grid grid-cols-2 gap-space-sm">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Tasa de Ahorro</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-micro text-label-micro font-bold">Óptimo</span>
+</div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-numeric-hero text-numeric-hero text-on-surface">18.5%</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-space-sm overflow-hidden">
+<div class="bg-secondary h-full rounded-full transition-all duration-700 ease-out" style="width: 18.5%;"></div>
+</div>
+<span class="font-label-micro text-label-micro text-secondary font-medium mt-1 inline-flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px]">arrow_upward</span> +2.4% vs Septiembre
+      </span>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Margen Libre</span>
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-micro text-label-micro text-on-surface-variant">Disponible neto</span>
+<span class="font-numeric-hero text-numeric-hero text-on-surface tracking-tight">$2,450,000</span>
+</div>
+<span class="font-label-micro text-label-micro text-on-surface-variant mt-space-sm truncate">
+        53.2% de flujo sin comprometer
+      </span>
+</div>
+</section>
+<!-- Interactive Donut Breakdown -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-surface">¿A dónde se va tu dinero?</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Distribución del gasto total ($3,050,000)</span>
+</div>
+<button class="hidden text-on-surface-variant hover:text-primary font-label-micro text-label-micro underline uppercase tracking-wider py-1" id="reset-donut-filter">
+        Restablecer
+      </button>
+</div>
+<div class="flex flex-col items-center justify-center my-space-xs">
+<!-- SVG Donut Chart -->
+<div class="relative w-52 h-52 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 120 120">
+<circle cx="60" cy="60" fill="none" r="46" stroke="#f2f4f6" stroke-width="12"></circle>
+<!-- 1. Responsabilidades Fijas: 42% (Circumference ~289.02) -> stroke-dasharray="121.39 289.02" -->
+<circle class="transition-all duration-300 cursor-pointer hover:stroke-[14]" cx="60" cy="60" fill="none" id="donut-slice-1" r="46" stroke="#0f1c2c" stroke-dasharray="121.39 289.02" stroke-dashoffset="0" stroke-linecap="round" stroke-width="12"></circle>
+<!-- 2. Gastos Variables & Ocio: 32% -> stroke-dasharray="92.48 289.02" offset="-121.39" -->
+<circle class="transition-all duration-300 cursor-pointer hover:stroke-[14]" cx="60" cy="60" fill="none" id="donut-slice-2" r="46" stroke="#ba1a1a" stroke-dasharray="92.48 289.02" stroke-dashoffset="-121.39" stroke-linecap="round" stroke-width="12"></circle>
+<!-- 3. Ahorro & Inversión: 16% -> stroke-dasharray="46.24 289.02" offset="-213.87" -->
+<circle class="transition-all duration-300 cursor-pointer hover:stroke-[14]" cx="60" cy="60" fill="none" id="donut-slice-3" r="46" stroke="#006c49" stroke-dasharray="46.24 289.02" stroke-dashoffset="-213.87" stroke-linecap="round" stroke-width="12"></circle>
+<!-- 4. Pago Tarjetas & Otros: 10% -> stroke-dasharray="28.90 289.02" offset="-260.11" -->
+<circle class="transition-all duration-300 cursor-pointer hover:stroke-[14]" cx="60" cy="60" fill="none" id="donut-slice-4" r="46" stroke="#778598" stroke-dasharray="28.90 289.02" stroke-dashoffset="-260.11" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<!-- Donut Center Text -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
+<span class="font-numeric-hero text-numeric-hero text-on-surface transition-all" id="donut-center-pct">100%</span>
+<span class="font-label-micro text-label-micro text-on-surface-variant font-semibold uppercase tracking-wider transition-all truncate max-w-[110px]" id="donut-center-label">Gastos Totales</span>
+<span class="font-numeric-table text-numeric-table text-on-surface-variant font-medium transition-all" id="donut-center-val">$3,050,000</span>
+</div>
+</div>
+</div>
+<!-- Interactive Interactive Category Cards -->
+<div class="grid grid-cols-1 gap-space-xs pt-space-xs">
+<!-- Item 1 -->
+<button class="cat-pill w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between active:scale-[0.99]" data-cat="1" data-name="Fijas" data-pct="42%" data-val="$1,280,000">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-3 h-3 rounded-full bg-primary-container flex-shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Responsabilidades Fijas</span>
+<span class="font-label-micro text-label-micro text-on-surface-variant">Arriendo, utilities, seguros</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-numeric-table text-numeric-table text-on-surface font-semibold">$1,280,000</span>
+<span class="font-label-micro text-label-micro text-primary-container font-bold">42%</span>
+</div>
+</button>
+<!-- Item 2 -->
+<button class="cat-pill w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between active:scale-[0.99]" data-cat="2" data-name="Variables" data-pct="32%" data-val="$970,000">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-3 h-3 rounded-full bg-error flex-shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Gastos Variables &amp; Ocio</span>
+<span class="font-label-micro text-label-micro text-on-surface-variant">Restaurantes, compras, cine</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-numeric-table text-numeric-table text-on-surface font-semibold">$970,000</span>
+<span class="font-label-micro text-label-micro text-error font-bold">32%</span>
+</div>
+</button>
+<!-- Item 3 -->
+<button class="cat-pill w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between active:scale-[0.99]" data-cat="3" data-name="Ahorro" data-pct="16%" data-val="$500,000">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-3 h-3 rounded-full bg-secondary flex-shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Ahorro &amp; Inversión</span>
+<span class="font-label-micro text-label-micro text-on-surface-variant">CDT, Fondos mutuos, Crypto</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-numeric-table text-numeric-table text-secondary font-semibold">$500,000</span>
+<span class="font-label-micro text-label-micro text-secondary font-bold">16%</span>
+</div>
+</button>
+<!-- Item 4 -->
+<button class="cat-pill w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between active:scale-[0.99]" data-cat="4" data-name="Tarjetas" data-pct="10%" data-val="$300,000">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-3 h-3 rounded-full bg-on-primary-container flex-shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Pago Tarjetas &amp; Otros</span>
+<span class="font-label-micro text-label-micro text-on-surface-variant">Amex cuota 2, intereses</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-numeric-table text-numeric-table text-on-surface font-semibold">$300,000</span>
+<span class="font-label-micro text-label-micro text-on-primary-container font-bold">10%</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Evolution Comparison Bar Chart -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-surface">Evolución Trimestral</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Comparativo Ingresos vs Gastos Totales</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1">
+<span class="w-2.5 h-2.5 rounded-sm bg-secondary"></span>
+<span class="font-label-micro text-label-micro text-on-surface-variant">Ingresos</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary-container"></span>
+<span class="font-label-micro text-label-micro text-on-surface-variant">Gastos</span>
+</div>
+</div>
+</div>
+<!-- Visual Bars Representation -->
+<div class="h-44 w-full flex items-end justify-between gap-space-md pt-space-md px-space-xs">
+<!-- Agosto -->
+<div class="flex-1 flex flex-col items-center h-full justify-end group">
+<div class="w-full flex items-end justify-center gap-1.5 h-32">
+<!-- Ingreso Agosto: $4.9M (scaled ~80%) -->
+<div class="w-1/2 max-w-[20px] bg-secondary/80 rounded-t-sm h-[78%] transition-all duration-300 group-hover:bg-secondary"></div>
+<!-- Gasto Agosto: $2.4M (scaled ~40%) -->
+<div class="w-1/2 max-w-[20px] bg-primary-container/80 rounded-t-sm h-[42%] transition-all duration-300 group-hover:bg-primary-container"></div>
+</div>
+<span class="font-label-micro text-label-micro text-on-surface-variant mt-space-xs">Ago</span>
+<span class="font-label-micro text-label-micro text-on-surface font-semibold">$4.9M / $2.4M</span>
+</div>
+<!-- Septiembre -->
+<div class="flex-1 flex flex-col items-center h-full justify-end group">
+<div class="w-full flex items-end justify-center gap-1.5 h-32">
+<!-- Ingreso Sep: $5.0M (scaled ~82%) -->
+<div class="w-1/2 max-w-[20px] bg-secondary/80 rounded-t-sm h-[82%] transition-all duration-300 group-hover:bg-secondary"></div>
+<!-- Gasto Sep: $2.7M (scaled ~46%) -->
+<div class="w-1/2 max-w-[20px] bg-primary-container/80 rounded-t-sm h-[47%] transition-all duration-300 group-hover:bg-primary-container"></div>
+</div>
+<span class="font-label-micro text-label-micro text-on-surface-variant mt-space-xs">Sep</span>
+<span class="font-label-micro text-label-micro text-on-surface font-semibold">$5.0M / $2.7M</span>
+</div>
+<!-- Octubre (Highlighted) -->
+<div class="flex-1 flex flex-col items-center h-full justify-end bg-surface-container-low/70 rounded-lg p-1 group">
+<div class="w-full flex items-end justify-center gap-1.5 h-32">
+<!-- Ingreso Oct: $5.2M (scaled ~90%) -->
+<div class="w-1/2 max-w-[20px] bg-secondary rounded-t-sm h-[90%] shadow-sm relative">
+<span class="absolute -top-5 left-1/2 -translate-x-1/2 font-label-micro text-label-micro text-secondary font-bold">$5.2M</span>
+</div>
+<!-- Gasto Oct: $2.55M (scaled ~44%) -->
+<div class="w-1/2 max-w-[20px] bg-primary-container rounded-t-sm h-[44%] shadow-sm relative">
+<span class="absolute -top-5 left-1/2 -translate-x-1/2 font-label-micro text-label-micro text-on-surface font-bold">$2.55M</span>
+</div>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-space-xs font-bold">Oct</span>
+<span class="font-label-micro text-label-micro text-secondary font-bold">Superávit</span>
+</div>
+</div>
+</section>
+<!-- Google Sheets Live Integration Hub -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md relative overflow-hidden">
+<!-- Header with Connected Badge -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/50 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-secondary text-[24px]">table_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Google Sheets Hub</span>
+<span class="font-label-micro text-label-micro text-on-surface-variant truncate">Mis_Finanzas_Personales_2024 (Google Drive)</span>
+</div>
+</div>
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 flex-shrink-0">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-micro text-label-micro text-on-secondary-container font-semibold">Bidireccional</span>
+</div>
+</div>
+<!-- Sync Metadata Row -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">history</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Última sincronización:</span>
+</div>
+<span class="font-numeric-table text-numeric-table text-on-surface font-semibold" id="sync-timestamp">Hace 3 minutos</span>
+</div>
+<!-- Active Connected Tabs Matrix -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-micro text-label-micro text-on-surface-variant uppercase tracking-wider">Pestañas del Libro Vinculadas</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-micro text-label-micro font-medium">
+<span class="material-symbols-outlined text-[13px] text-secondary">check_circle</span> Dashboard_Resumen
+        </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-micro text-label-micro font-medium">
+<span class="material-symbols-outlined text-[13px] text-secondary">check_circle</span> Ingresos_Ahorro
+        </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-micro text-label-micro font-medium">
+<span class="material-symbols-outlined text-[13px] text-secondary">check_circle</span> Gastos_Fijos
+        </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-micro text-label-micro font-medium">
+<span class="material-symbols-outlined text-[13px] text-secondary">check_circle</span> Gastos_Variables
+        </span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<button class="w-full h-12 rounded-lg bg-primary text-on-primary flex items-center justify-center gap-space-sm font-headline-sm text-headline-sm font-semibold transition-transform active:scale-[0.98] shadow-sm" id="trigger-sync-btn">
+<span class="material-symbols-outlined text-[20px]" id="sync-icon">sync</span>
+<span id="sync-btn-text">Sincronizar Ahora con Google Sheets</span>
+</button>
+<a class="w-full h-11 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center gap-space-xs font-headline-sm text-headline-sm font-medium transition-colors hover:bg-surface-container-highest" href="https://docs.google.com/spreadsheets" rel="noopener noreferrer" target="_blank">
+<span>Abrir hoja en Google Sheets</span>
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</a>
+</div>
+<!-- Mini Feedback Toast -->
+<div class="hidden absolute top-4 left-4 right-4 bg-primary text-on-primary px-space-md py-2.5 rounded-lg shadow-xl flex items-center justify-between transition-all duration-300" id="sync-toast">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">cloud_done</span>
+<span class="font-body-sm text-body-sm text-on-primary font-medium">Cambios sincronizados en Drive</span>
+</div>
+<span class="font-label-micro text-label-micro text-primary-fixed">OK</span>
+</div>
+</section>
+</div>
+<script>
+  // Micro-interactions and localized state
+  (function() {
+    const centerPct = document.getElementById('donut-center-pct');
+    const centerLabel = document.getElementById('donut-center-label');
+    const centerVal = document.getElementById('donut-center-val');
+    const resetBtn = document.getElementById('reset-donut-filter');
+    const categoryButtons = document.querySelectorAll('.cat-pill');
+    const slices = {
+      '1': document.getElementById('donut-slice-1'),
+      '2': document.getElementById('donut-slice-2'),
+      '3': document.getElementById('donut-slice-3'),
+      '4': document.getElementById('donut-slice-4')
+    };
+
+    function resetDonut() {
+      centerPct.textContent = '100%';
+      centerLabel.textContent = 'Gastos Totales';
+      centerVal.textContent = '$3,050,000';
+      resetBtn.classList.add('hidden');
+      categoryButtons.forEach(btn => {
+        btn.classList.remove('bg-surface-container-highest');
+        btn.classList.add('bg-surface-container-low');
+      });
+      Object.values(slices).forEach(s => {
+        if(s) s.style.opacity = '1';
+      });
+    }
+
+    categoryButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat');
+        const pct = btn.getAttribute('data-pct');
+        const name = btn.getAttribute('data-name');
+        const val = btn.getAttribute('data-val');
+
+        categoryButtons.forEach(b => {
+          b.classList.remove('bg-surface-container-highest');
+          b.classList.add('bg-surface-container-low');
+        });
+        btn.classList.remove('bg-surface-container-low');
+        btn.classList.add('bg-surface-container-highest');
+
+        centerPct.textContent = pct;
+        centerLabel.textContent = name;
+        centerVal.textContent = val;
+        resetBtn.classList.remove('hidden');
+
+        // Focus slice highlight
+        Object.entries(slices).forEach(([key, slice]) => {
+          if (slice) {
+            slice.style.opacity = key === cat ? '1' : '0.35';
+          }
+        });
+      });
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', resetDonut);
+    }
+
+    // Google Sheets Sync Simulator
+    const syncBtn = document.getElementById('trigger-sync-btn');
+    const syncIcon = document.getElementById('sync-icon');
+    const syncText = document.getElementById('sync-btn-text');
+    const syncToast = document.getElementById('sync-toast');
+    const timestamp = document.getElementById('sync-timestamp');
+
+    if (syncBtn) {
+      syncBtn.addEventListener('click', () => {
+        syncIcon.classList.add('animate-spin');
+        syncText.textContent = 'Escribiendo en Google Drive...';
+        syncBtn.setAttribute('disabled', 'true');
+
+        setTimeout(() => {
+          syncIcon.classList.remove('animate-spin');
+          syncText.textContent = 'Sincronizar Ahora con Google Sheets';
+          syncBtn.removeAttribute('disabled');
+          timestamp.textContent = 'Justo ahora';
+
+          // Show Toast
+          if (syncToast) {
+            syncToast.classList.remove('hidden');
+            setTimeout(() => {
+              syncToast.classList.add('hidden');
+            }, 3000);
+          }
+        }, 1200);
+      });
+    }
+
+    // Month Selector simulation
+    const months = ['Agosto 2024', 'Septiembre 2024', 'Octubre 2024'];
+    let currentIdx = 2;
+    const labelMonth = document.getElementById('current-month-label');
+    const prevBtn = document.getElementById('prev-month-btn');
+    const nextBtn = document.getElementById('next-month-btn');
+
+    if (prevBtn && nextBtn && labelMonth) {
+      prevBtn.addEventListener('click', () => {
+        if (currentIdx > 0) {
+          currentIdx--;
+          labelMonth.textContent = months[currentIdx];
+        }
+      });
+      nextBtn.addEventListener('click', () => {
+        if (currentIdx < months.length - 1) {
+          currentIdx++;
+          labelMonth.textContent = months[currentIdx];
+        }
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex items-center justify-between h-16 px-space-xs"><a class="flex-1 min-w-[60px] h-14 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="inicio" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-micro text-label-micro tracking-tight text-center truncate w-full px-0.5">Inicio</span></a><a class="flex-1 min-w-[60px] h-14 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="ingresos-ahorro" href="#"><span class="material-symbols-outlined text-[22px]">savings</span><span class="font-label-micro text-label-micro tracking-tight text-center truncate w-full px-0.5">Ingresos</span></a><a class="flex-1 min-w-[60px] h-14 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="fijos" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-micro text-label-micro tracking-tight text-center truncate w-full px-0.5">Fijos</span></a><a class="flex-1 min-w-[60px] h-14 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="gastos" href="#"><span class="material-symbols-outlined text-[22px]">shopping_bag</span><span class="font-label-micro text-label-micro tracking-tight text-center truncate w-full px-0.5">Gastos</span></a><a class="flex-1 min-w-[60px] h-14 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="estadisticas-sheets" href="#"><span class="material-symbols-outlined text-[22px]">query_stats</span><span class="font-label-micro text-label-micro tracking-tight text-center truncate w-full px-0.5">Sheets</span></a></div></nav></body></html>

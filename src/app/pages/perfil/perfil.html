@@ -1,0 +1,103 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex items-center gap-space-sm pt-space-xs">
+    @if (!bienvenida) {
+      <a routerLink="/inicio" aria-label="Volver" class="flex h-9 w-9 items-center justify-center rounded-full bg-surface-container">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+      </a>
+    }
+    <h1 class="text-headline-lg">Mi perfil</h1>
+  </div>
+
+  @if (bienvenida) {
+    <div class="flex items-start gap-space-sm rounded-xl bg-[#ECFDF5] p-space-md">
+      <span class="material-symbols-outlined text-secondary">celebration</span>
+      <div class="flex flex-col gap-1">
+        <span class="font-display text-headline-sm">¡Tu cuenta está lista!</span>
+        <span class="text-body-sm text-on-surface-variant">Configura tu salario: se sumará como ingreso todos los meses. Puedes cambiarlo cuando quieras.</span>
+      </div>
+    </div>
+  }
+
+  <div class="card flex items-center gap-space-md p-space-md">
+    <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary-container font-display text-headline-md text-white">{{ inicial() }}</div>
+    <div class="flex min-w-0 flex-col">
+      <span class="truncate text-body-lg font-semibold">{{ store.perfil()?.nombre || store.perfil()?.usuario }}</span>
+      <span class="truncate font-mono text-label-micro text-on-surface-variant">
+        {{ session.isDemo() ? 'Modo demo · los cambios no se guardan' : store.perfil()?.usuario }}
+      </span>
+    </div>
+  </div>
+
+  <form class="card flex flex-col gap-space-md p-space-lg" (ngSubmit)="guardar()">
+    <label class="flex flex-col gap-space-xs">
+      <span class="text-label-md text-on-surface-variant">Nombre (opcional)</span>
+      <input class="field" name="nombre" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" placeholder="¿Cómo te llamamos?" autocomplete="given-name" />
+    </label>
+    <label class="flex flex-col gap-space-xs">
+      <span class="text-label-md text-on-surface-variant">Salario mensual bruto (COP, antes de descuentos)</span>
+      <input
+        class="field font-mono"
+        name="salario"
+        type="number"
+        min="0"
+        inputmode="numeric"
+        [ngModel]="salario()"
+        (ngModelChange)="salario.set($event)"
+        placeholder="Ej. 5000000"
+      />
+    </label>
+
+    @if (desglose().bruto > 0) {
+      <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">Salario bruto</span><span>{{ desglose().bruto | money }}</span>
+        </div>
+        <div class="flex justify-between text-error">
+          <span>Salud (4%)</span><span>{{ -desglose().salud | money }}</span>
+        </div>
+        <div class="flex justify-between text-error">
+          <span>Pensión (4%)</span><span>{{ -desglose().pension | money }}</span>
+        </div>
+        <div class="mt-1 flex justify-between border-t border-outline-variant pt-space-xs font-bold text-secondary">
+          <span>Salario neto</span><span>{{ desglose().neto | money }}</span>
+        </div>
+      </div>
+      <span class="text-body-sm text-on-surface-variant">
+        El neto se suma como ingreso todos los meses. No incluye retención en la fuente ni fondo de solidaridad.
+      </span>
+    }
+
+    @if (primaSugerida() > 0) {
+      <div class="flex items-start gap-space-sm rounded-lg bg-primary-fixed/40 p-space-sm">
+        <span class="material-symbols-outlined text-[18px] text-on-primary-fixed-variant">redeem</span>
+        <span class="text-body-sm text-on-primary-fixed-variant">
+          Prima de servicios sugerida: <b class="font-mono">{{ primaSugerida() | money }}</b> en junio y otra en diciembre (salario bruto ÷ 2, sin descuentos). Te la recordaremos esos meses.
+        </span>
+      </div>
+    }
+
+    @if (error(); as err) {
+      <div class="rounded-lg bg-error-container/50 p-space-sm text-body-sm text-on-error-container" role="alert">{{ err }}</div>
+    }
+
+    <button
+      type="submit"
+      [disabled]="store.saving()"
+      class="flex h-12 items-center justify-center gap-space-xs rounded-lg bg-primary-container text-label-md font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
+    >
+      @if (store.saving()) {
+        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+      }
+      {{ bienvenida ? 'Guardar y empezar' : 'Guardar cambios' }}
+    </button>
+    @if (bienvenida) {
+      <a routerLink="/inicio" class="text-center text-label-md font-semibold text-on-surface-variant underline">Hacerlo más tarde</a>
+    }
+  </form>
+
+  @if (!bienvenida) {
+    <button type="button" class="flex items-center justify-center gap-space-xs self-center rounded-lg bg-error-container/40 px-space-md py-space-sm text-label-md font-semibold text-error" (click)="store.logout()">
+      <span class="material-symbols-outlined text-[18px]">logout</span> {{ session.isDemo() ? 'Salir del demo' : 'Cerrar sesión' }}
+    </button>
+  }
+</div>

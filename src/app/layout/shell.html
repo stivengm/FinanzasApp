@@ -1,0 +1,80 @@
+<header class="fixed top-0 z-50 w-full bg-surface/85 pt-[env(safe-area-inset-top)] shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl">
+  <div class="mx-auto flex h-16 max-w-2xl items-center justify-between gap-space-sm px-margin">
+    <a routerLink="/inicio" class="flex min-w-0 items-center gap-space-sm">
+      <img src="logo.svg" alt="FinanzSync" class="h-8 w-8 flex-shrink-0" />
+      <div class="flex min-w-0 flex-col">
+        <div class="flex min-w-0 items-center gap-space-xs font-display text-headline-sm">
+          <span class="truncate text-on-surface">FinanzSync</span>
+          @if (title()) {
+            <span class="text-outline-variant">/</span>
+            <span class="truncate text-on-surface-variant">{{ title() }}</span>
+          }
+        </div>
+        <app-sync-pill />
+      </div>
+    </a>
+    <div class="flex flex-shrink-0 items-center gap-space-xs">
+      <a
+        routerLink="/fijos"
+        [attr.aria-label]="'Pendientes: ' + pendientes()"
+        class="relative flex h-11 w-11 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+      >
+        <span class="material-symbols-outlined text-[22px]">notifications</span>
+        @if (pendientes() > 0) {
+          <span class="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-error"></span>
+        }
+      </a>
+      <a
+        routerLink="/perfil"
+        aria-label="Mi perfil"
+        class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary transition-transform active:scale-95"
+      >
+        <span class="material-symbols-outlined text-[18px]">person</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto w-full max-w-2xl px-margin pt-[calc(4.5rem+env(safe-area-inset-top))] pb-32">
+  @if (store.error(); as error) {
+    <div class="mb-space-md flex items-start gap-space-sm rounded-xl bg-error-container/50 p-space-md text-on-error-container">
+      <span class="material-symbols-outlined text-[20px]">cloud_off</span>
+      <div class="flex min-w-0 flex-1 flex-col gap-1">
+        <span class="text-body-md font-semibold">No pudimos cargar tus datos</span>
+        <span class="text-body-sm">{{ error }}</span>
+      </div>
+      <button type="button" class="text-label-md font-semibold underline" (click)="store.load()">Reintentar</button>
+    </div>
+  }
+  <router-outlet />
+</main>
+
+<nav class="fixed bottom-0 z-50 w-full bg-surface/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_12px_rgba(0,0,0,0.04)] backdrop-blur-xl">
+  <div class="mx-auto flex h-16 max-w-2xl items-center justify-between px-space-xs">
+    @for (item of nav; track item.path) {
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="!text-primary font-semibold"
+        #rla="routerLinkActive"
+        [attr.aria-current]="rla.isActive ? 'page' : null"
+        class="flex h-14 min-w-[60px] flex-1 flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface"
+      >
+        <span class="material-symbols-outlined text-[22px]" [style.font-variation-settings]="rla.isActive ? '&quot;FILL&quot; 1' : null">{{ item.icon }}</span>
+        <span class="w-full truncate px-0.5 text-center font-mono text-label-micro tracking-tight">{{ item.label }}</span>
+      </a>
+    }
+  </div>
+</nav>
+
+<app-forms-host />
+
+@if (ui.toast(); as toast) {
+  <div
+    role="status"
+    class="fixed bottom-40 left-1/2 z-[70] flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-space-sm rounded-2xl px-space-md py-space-sm text-body-md shadow-lg"
+    [class]="toast.error ? 'bg-error text-on-error' : 'bg-primary-container text-white'"
+  >
+    <span class="material-symbols-outlined text-[18px]">{{ toast.error ? 'error' : 'check_circle' }}</span>
+    {{ toast.text }}
+  </div>
+}

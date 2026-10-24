@@ -1,59 +1,84 @@
-# FinanzasApp
+# FinanzSync — finanzas-app
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.0.
+Aplicación web en **Angular 21** para llevar finanzas personales sobre una hoja de **Google Sheets** privada. Cada persona se registra con usuario (o correo) y clave; todos comparten la misma hoja, pero cada uno solo ve sus propios datos. El diseño sigue el prototipo de `prototipo/` (sistema *Precision Editorial Finance*).
 
-## Development server
+## Pantallas
 
-To start a local development server, run:
+| Ruta | Pantalla |
+| --- | --- |
+| `/inicio` | Resumen: balance del mes, meta de ahorro, próximos vencimientos, últimos movimientos |
+| `/ingresos` | Salario mensual, prima sugerida, ingresos extra del mes, bóveda de ahorro y remanente |
+| `/fijos` | Responsabilidades fijas con estado pagado / pendiente / programado |
+| `/gastos` | Gastos variables con búsqueda, filtros por categoría y promedio diario |
+| `/sheets` | Analítica (tasa de ahorro, distribución, evolución trimestral) y hub de sincronización |
+| `/ingresar` | Ingreso y registro con usuario o correo + clave (y modo demo) |
+| `/perfil` | Nombre, salario mensual y cierre de sesión |
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Ejecutar
 
 ```bash
-ng generate --help
+npm install
+npm start          # http://localhost:4200
+npm test           # pruebas unitarias (Vitest)
+npm run build      # build de producción en dist/
 ```
 
-## Building
+## Configurar el backend (una sola vez, lo hace el propietario)
 
-To build the project run:
+La app no lee la hoja directamente: habla con un **Apps Script** publicado como aplicación web, que corre con tus permisos. Así la hoja puede quedar **privada** y nadie ve las claves.
 
-```bash
-ng build
+1. Crea una hoja nueva en Google Sheets (o sube `plantilla/finanzas-plantilla.xlsx` y ábrela como Hoja de cálculo de Google).
+2. Menú **Extensiones → Apps Script**. Borra el contenido de `Código.gs` y pega todo `plantilla/apps-script.gs`. Guarda (💾).
+3. En la barra superior elige la función **`configurar`** y pulsa **Ejecutar**. Google pedirá permisos: *Revisar permisos → tu cuenta → Configuración avanzada → Ir a FinanzSync (no seguro) → Permitir*. Esto crea las pestañas que falten.
+4. **Implementar → Nueva implementación** → ⚙️ *Tipo: Aplicación web*:
+   - Descripción: `FinanzSync`
+   - Ejecutar como: **Yo**
+   - Quién tiene acceso: **Cualquier usuario**
+5. Pulsa **Implementar** y copia la **URL de la aplicación web** (termina en `/exec`).
+6. Pégala en `src/app/app.settings.ts`:
+   ```ts
+   export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/XXXX/exec';
+   ```
+7. En la hoja, **Compartir → Acceso general: Restringido** (solo tú). La app sigue funcionando porque el script corre como tú.
+
+> Si cambias el código del script: **Implementar → Gestionar implementaciones → ✏️ → Versión: Nueva versión → Implementar**. La URL no cambia.
+
+## Usuarios
+
+- Cualquiera con la URL de la app puede **crear su cuenta** con usuario o correo y clave (mín. 4 caracteres).
+- Las cuentas quedan en la pestaña `Usuarios` en texto plano (Usuario, Clave, Nombre, Salario, Token, Registrado). El script nunca devuelve la clave a la app.
+- Todas las pestañas de datos tienen la columna `Usuario`; el script solo lee y escribe las filas del usuario autenticado.
+
+## Estructura de la hoja
+
+| Pestaña | Columnas |
+| --- | --- |
+| `Usuarios` | Usuario · Clave · Nombre · **Salario** · Token · Registrado |
+| `Ingresos` | Usuario · Fecha · Fuente · Descripción · Tipo (Extra/Prima/Bonificación/Renta/Otro) · Monto |
+| `Ahorro` | Usuario · Objetivo · Descripción · Meta · Ahorrado · Aporte Mensual |
+| `Fijos` | Usuario · Servicio · Proveedor · Categoría · Frecuencia (Mensual/Bimestral/…) · Día de Pago · Monto |
+| `Pagos` | Usuario · Fecha · Servicio · Monto — un registro por cada pago de un fijo |
+| `Gastos` | Usuario · Fecha · Descripción · Detalle · Categoría · Método de Pago · Monto |
+
+Reglas de cálculo:
+
+- En el perfil se ingresa el **salario bruto** (columna `Salario`). Cada mes cuenta como ingreso el **neto** = bruto − 4% salud − 4% pensión (p. ej. $5.000.000 → $4.600.000). No incluye retención en la fuente ni fondo de solidaridad pensional.
+- Los ingresos de `Ingresos` cuentan solo en el mes de su fecha.
+- **Prima de servicios**: en junio (pago hasta el 30) y diciembre (hasta el 20) la app sugiere registrar **salario bruto ÷ 2** (la prima no tiene descuentos de salud ni pensión), con el formulario ya diligenciado. Deja de sugerirla cuando ya hay un ingreso de tipo Prima en ese mes.
+- Un fijo está **pagado** en un mes si existe una fila en `Pagos` con el mismo servicio en ese mes. Los fijos bimestrales, trimestrales, etc. se programan a partir de su último pago.
+- **Balance disponible** = ingresos − (fijos + gastos variables) − aportes mensuales de ahorro.
+
+## Arquitectura
+
+```
+src/app/
+  core/        sesión (localStorage), cliente del Apps Script, store con signals, parseo
+  layout/      shell: header, navegación inferior, toasts
+  forms/       formularios en hoja inferior (gasto, ingreso, fijo, meta)
+  pages/       ingresar, perfil, inicio, ingresos, fijos, gastos, sheets
+  shared/      pipe de moneda COP, selector de mes, iconos por categoría
+plantilla/     plantilla .xlsx y backend en Apps Script
+app.settings.ts  URL del Apps Script
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Estilos con Tailwind CSS v4; los tokens del prototipo están en `src/styles.css`.

@@ -1,0 +1,150 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex flex-wrap items-end justify-between gap-space-sm pt-space-xs">
+    <div class="flex flex-col">
+      <h1 class="text-headline-lg">Responsabilidades Fijas</h1>
+      <span class="text-body-md text-on-surface-variant">Control de servicios y compromisos recurrentes</span>
+    </div>
+    <app-month-picker />
+  </div>
+
+  <!-- Resumen -->
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex items-start justify-between">
+      <div class="flex flex-col">
+        <span class="text-body-md text-on-surface-variant">Total fijos del mes</span>
+        <span class="font-display text-numeric-hero font-bold">{{ resumen().total | money }}</span>
+      </div>
+      <div class="flex h-11 w-11 items-center justify-center rounded-full bg-surface-container">
+        <span class="material-symbols-outlined">calendar_month</span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-space-xs">
+      <div class="flex justify-between text-body-sm">
+        <span class="text-on-surface-variant">Progreso de cobertura</span>
+        <span class="font-semibold text-secondary">{{ resumen().cobertura }}% cubierto</span>
+      </div>
+      <div class="h-2 overflow-hidden rounded-full bg-surface-container">
+        <div class="h-full rounded-full bg-secondary transition-all duration-700" [style.width.%]="resumen().cobertura"></div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-space-sm">
+      <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-sm">
+        <span class="flex items-center gap-1 font-mono text-label-micro text-on-surface-variant uppercase">
+          <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span> Pagados ({{ resumen().pagados }})
+        </span>
+        <span class="font-mono text-numeric-table font-semibold">{{ resumen().sumPagados | money }}</span>
+      </div>
+      <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-sm">
+        <span class="flex items-center gap-1 font-mono text-label-micro text-on-surface-variant uppercase">
+          <span class="h-1.5 w-1.5 rounded-full bg-error"></span> Pendientes ({{ resumen().pendientes }})
+        </span>
+        <span class="font-mono text-numeric-table font-semibold">{{ resumen().sumPendientes | money }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segmentado -->
+  <div class="grid grid-cols-3 gap-1 rounded-xl bg-surface-container-low p-1" role="tablist">
+    @for (opt of segmentos(); track opt.key) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="filtro() === opt.key"
+        class="h-9 rounded-lg text-body-md transition-all"
+        [class]="filtro() === opt.key ? 'bg-primary text-on-primary font-semibold shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'"
+        (click)="filtro.set(opt.key)"
+      >
+        {{ opt.label }} ({{ opt.count }})
+      </button>
+    }
+  </div>
+
+  <!-- Lista -->
+  <div class="flex flex-col gap-space-sm">
+    @for (item of lista(); track item.fijo.row; let i = $index) {
+      <div class="card flex flex-col gap-space-sm p-space-md">
+        <div class="flex items-start justify-between gap-space-sm">
+          <div class="flex min-w-0 items-center gap-space-md">
+            <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" [class]="tint(item, i)">
+              <span class="material-symbols-outlined text-[20px]">{{ iconFor(item.fijo.servicio, item.fijo.categoria) }}</span>
+            </div>
+            <div class="flex min-w-0 flex-col">
+              <span class="truncate text-body-lg font-medium">{{ item.fijo.servicio }}</span>
+              <div class="flex flex-wrap items-center gap-x-space-xs font-mono text-label-micro text-on-surface-variant">
+                <span>{{ item.fijo.frecuencia }}</span>
+                <span class="text-outline-variant">•</span>
+                @if (item.pago) {
+                  <span class="flex items-center gap-0.5 text-secondary">
+                    <span class="material-symbols-outlined text-[12px]">check_circle</span> Pagado el {{ fecha(item.pago.fecha!) }}
+                  </span>
+                } @else if (item.aplica) {
+                  <span class="flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-[12px]">schedule</span> Vence {{ fecha(item.vence) }}
+                  </span>
+                } @else {
+                  <span>No aplica este mes</span>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-shrink-0 flex-col items-end gap-1">
+            <span class="font-mono text-numeric-table font-semibold">{{ (item.pago?.monto ?? item.fijo.monto) | money }}</span>
+            @if (item.pago) {
+              <span class="flex items-center gap-0.5 rounded-full bg-secondary-container/60 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container">
+                <span class="material-symbols-outlined text-[12px]">check</span> Pagado
+              </span>
+            } @else if (item.aplica) {
+              <span class="flex items-center gap-1 rounded-full bg-error-container/50 px-2 py-0.5 font-mono text-label-micro text-error">
+                <span class="h-1.5 w-1.5 rounded-full bg-error"></span> Pendiente
+              </span>
+            } @else {
+              <span class="flex items-center gap-0.5 rounded-full border border-outline-variant px-2 py-0.5 font-mono text-label-micro text-on-surface-variant">
+                <span class="material-symbols-outlined text-[12px]">event</span> Programado {{ item.proximoCobro ? monthName(item.proximoCobro, true) : '' }}
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (item.pago) {
+          <div class="flex items-center justify-between rounded-lg bg-surface-container-low px-space-sm py-space-xs text-body-md">
+            <span class="text-on-surface-variant">Fila Sheets #{{ item.pago.row }}</span>
+            <span class="flex items-center gap-1 text-on-secondary-container">
+              <span class="material-symbols-outlined text-[18px]">check_box</span> Liquidado
+            </span>
+          </div>
+        } @else if (item.aplica) {
+          <div class="flex items-center justify-between rounded-lg bg-surface-container-low px-space-sm py-space-xs text-body-md">
+            <span class="text-on-surface-variant">Acción en hoja</span>
+            <button
+              type="button"
+              class="flex items-center gap-1 rounded-md px-1 py-0.5 font-medium hover:bg-surface-container disabled:opacity-60"
+              [disabled]="marcando() === item.fijo.row"
+              (click)="marcar(item)"
+            >
+              <span class="material-symbols-outlined text-[18px]" [class.animate-spin]="marcando() === item.fijo.row">
+                {{ marcando() === item.fijo.row ? 'progress_activity' : 'radio_button_unchecked' }}
+              </span>
+              Marcar como pagado
+            </button>
+          </div>
+        } @else {
+          <div class="flex items-center gap-space-xs rounded-full bg-primary-fixed/60 px-space-md py-space-xs font-mono text-label-micro text-on-primary-fixed-variant">
+            <span class="material-symbols-outlined text-[14px]">event_repeat</span>
+            {{ item.fijo.frecuencia }} – próximo cobro {{ item.proximoCobro ? monthName(item.proximoCobro) : '' }}
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="card p-space-md text-body-md text-on-surface-variant">No hay responsabilidades en este filtro.</div>
+    }
+  </div>
+
+  <button type="button" class="flex h-12 w-full items-center justify-center gap-space-sm rounded-xl bg-primary text-label-md font-semibold text-on-primary transition-all active:scale-[0.98]" (click)="ui.open('fijo')">
+    <span class="material-symbols-outlined text-[20px]">add_circle</span> Agregar nueva responsabilidad fija
+  </button>
+
+  <p class="flex items-center justify-center gap-space-xs text-center font-mono text-label-micro text-on-surface-variant">
+    <span class="material-symbols-outlined text-[16px] text-secondary">table_chart</span>
+    Mapeado a pestañas [{{ tabs.fijos }}] y [{{ tabs.pagos }}] en Google Sheets
+  </p>
+</div>

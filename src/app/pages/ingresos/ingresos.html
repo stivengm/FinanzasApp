@@ -1,0 +1,236 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex flex-wrap items-end justify-between gap-space-sm pt-space-xs">
+    <div class="flex flex-col">
+      <span class="font-mono text-label-micro tracking-wider text-on-surface-variant uppercase">Gestión de capital • Ciclo activo</span>
+      <h1 class="text-headline-lg">Ingresos y Ahorro</h1>
+    </div>
+    <app-month-picker />
+  </div>
+
+  <!-- Total -->
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex items-start justify-between gap-space-sm">
+      <div class="flex flex-col gap-space-xs">
+        <span class="text-body-md text-on-surface-variant">Ingresos totales de {{ mesNombre() }}</span>
+        <div class="flex flex-wrap items-center gap-space-sm">
+          <span class="font-display text-numeric-hero font-bold">{{ total() | money }}</span>
+          @if (trend(); as t) {
+            <span class="rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container">
+              {{ t >= 0 ? '+' : '' }}{{ t.toFixed(1) }}% vs mes ant.
+            </span>
+          }
+        </div>
+      </div>
+      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-secondary-container/40 text-secondary">
+        <span class="material-symbols-outlined">account_balance_wallet</span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-space-xs">
+      <div class="flex h-2 w-full overflow-hidden rounded-full bg-surface-container">
+        <div class="bg-secondary" [style.width.%]="flujo().salario"></div>
+        <div class="bg-primary-fixed-dim" [style.width.%]="flujo().prima"></div>
+        <div class="bg-secondary-fixed-dim" [style.width.%]="flujo().extras"></div>
+      </div>
+      <div class="flex gap-space-md font-mono text-label-micro text-on-surface-variant">
+        <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>Salario</span>
+        <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-primary-fixed-dim"></span>Prima</span>
+        <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-secondary-fixed-dim"></span>Extras</span>
+      </div>
+    </div>
+    <button type="button" class="flex h-12 w-full items-center justify-center gap-space-sm rounded-lg bg-primary text-label-md font-semibold text-on-primary transition-all active:scale-[0.98]" (click)="ui.open('ingreso')">
+      <span class="material-symbols-outlined text-[20px]">add_circle</span> Agregar ingreso extra del mes
+    </button>
+  </div>
+
+  <!-- Salario -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <h2 class="text-headline-sm">Salario</h2>
+      <span class="rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container uppercase">Todos los meses</span>
+    </div>
+    <div class="card flex flex-col gap-space-sm p-space-md">
+      <div class="flex items-center justify-between gap-space-sm">
+        <div class="flex min-w-0 items-center gap-space-sm">
+          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container text-on-surface-variant">
+            <span class="material-symbols-outlined text-[20px]">business</span>
+          </div>
+          <div class="flex min-w-0 flex-col">
+            <span class="text-body-lg font-semibold">Salario neto</span>
+            <span class="text-body-sm text-on-surface-variant">Se suma automáticamente cada mes</span>
+          </div>
+        </div>
+        <span class="flex-shrink-0 font-mono text-numeric-table font-bold" [class]="store.salario() ? 'text-secondary' : 'text-outline'">
+          {{ store.salario() ? (store.salarioDesglose().neto | money: true) : 'Sin configurar' }}
+        </span>
+      </div>
+      @if (store.salario()) {
+        <div class="grid grid-cols-3 gap-space-xs rounded-lg bg-surface-container-low px-space-sm py-space-xs font-mono text-label-micro">
+          <span class="flex flex-col text-on-surface-variant">Bruto<b>{{ store.salarioDesglose().bruto | money }}</b></span>
+          <span class="flex flex-col text-center text-error">Salud 4%<b>−{{ store.salarioDesglose().salud | money }}</b></span>
+          <span class="flex flex-col text-right text-error">Pensión 4%<b>−{{ store.salarioDesglose().pension | money }}</b></span>
+        </div>
+      }
+      <a routerLink="/perfil" class="flex items-center justify-end gap-1 text-label-md font-semibold text-secondary">
+        <span class="material-symbols-outlined text-[16px]">edit</span> {{ store.salario() ? 'Cambiar salario' : 'Configurar salario' }}
+      </a>
+    </div>
+  </section>
+
+  <!-- Prima -->
+  @if (store.prima(); as prima) {
+    <div class="flex flex-col gap-space-sm rounded-xl p-space-md" [class]="prima.registrada ? 'bg-[#ECFDF5]' : 'bg-primary-container text-white shadow-md'">
+      <div class="flex items-center gap-space-xs font-mono text-label-micro font-semibold tracking-wider uppercase" [class]="prima.registrada ? 'text-secondary' : 'text-secondary-fixed-dim'">
+        <span class="material-symbols-outlined text-[16px]">{{ prima.registrada ? 'task_alt' : 'redeem' }}</span> Prima de servicios · {{ prima.mes }}
+      </div>
+      @if (prima.registrada) {
+        <span class="text-body-md">Ya registraste la prima de {{ prima.mes }}.</span>
+      } @else {
+        <div class="flex flex-wrap items-end justify-between gap-space-sm">
+          <div class="flex flex-col">
+            <span class="text-body-sm text-on-primary-container">Sugerido (salario bruto ÷ 2, sin descuentos)</span>
+            <span class="font-display text-headline-lg font-bold">{{ prima.monto | money }}</span>
+          </div>
+          <button type="button" class="pill-btn bg-secondary-fixed-dim text-on-secondary-fixed" (click)="ui.openPrima(prima)">
+            <span class="material-symbols-outlined text-[18px]">add_circle</span> Registrar prima
+          </button>
+        </div>
+      }
+    </div>
+  } @else if (store.proximaPrima(); as proxima) {
+    <div class="flex items-center gap-space-sm rounded-xl bg-surface-container-low p-space-md">
+      <span class="material-symbols-outlined text-on-surface-variant">redeem</span>
+      <span class="text-body-sm text-on-surface-variant">
+        Próxima prima: <b>{{ proxima.mes }}</b> · sugerido <b class="font-mono">{{ proxima.monto | money }}</b>
+      </span>
+    </div>
+  }
+
+  <!-- Extras -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <h2 class="text-headline-sm">Ingresos extra de {{ mesNombre() }}</h2>
+      <span class="font-mono text-label-micro text-on-surface-variant">{{ extras().length }} registros</span>
+    </div>
+    @for (i of extras(); track i.row) {
+      <div class="card flex flex-col gap-space-sm p-space-md">
+        <div class="flex items-start justify-between gap-space-sm">
+          <div class="flex min-w-0 items-center gap-space-sm">
+            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container text-on-surface-variant">
+              <span class="material-symbols-outlined text-[20px]">{{ i.prima ? 'redeem' : iconFor(i.fuente, i.tipo) }}</span>
+            </div>
+            <div class="flex min-w-0 flex-col">
+              <span class="text-body-lg font-semibold">{{ i.fuente }}</span>
+              @if (i.descripcion) { <span class="truncate text-body-sm text-on-surface-variant">{{ i.descripcion }}</span> }
+            </div>
+          </div>
+          <span
+            class="flex-shrink-0 rounded-full px-2 py-0.5 font-mono text-label-micro uppercase"
+            [class]="i.prima ? 'bg-primary-fixed text-on-primary-fixed-variant' : 'bg-surface-container-high text-on-surface-variant'"
+            >{{ i.tipo || 'Extra' }}</span
+          >
+        </div>
+        <div class="flex items-center justify-between rounded-lg bg-surface-container-low px-space-sm py-space-sm">
+          <span class="flex items-center gap-space-xs font-mono text-label-micro text-on-surface-variant">
+            <span class="material-symbols-outlined text-[14px]">schedule</span>Recibido {{ i.fechaTexto }}
+          </span>
+          <span class="font-mono text-numeric-table font-bold text-secondary">{{ i.monto | money: true }}</span>
+        </div>
+        <span class="text-right font-mono text-label-micro text-outline">{{ tabs.ingresos }} · Fila #{{ i.row }}</span>
+      </div>
+    } @empty {
+      <div class="card p-space-md text-body-md text-on-surface-variant">No registraste ingresos extra este mes.</div>
+    }
+  </section>
+
+  <!-- Bóveda de ahorro -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <div class="flex items-center gap-space-xs">
+        <span class="material-symbols-outlined text-[18px]">lock</span>
+        <h2 class="text-headline-sm">Bóveda de ahorro y objetivos</h2>
+      </div>
+      <span class="rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container">Auto-sync</span>
+    </div>
+    <div class="card flex flex-col gap-space-md p-space-lg">
+      <div class="flex flex-wrap items-start justify-between gap-space-sm">
+        <div class="flex flex-col">
+          <span class="text-body-md text-on-surface-variant">Meta mensual programada</span>
+          <span class="font-display text-numeric-hero font-bold">{{ ahorro().programado | money }}</span>
+        </div>
+        <div class="flex flex-col items-end rounded-lg bg-surface-container-low px-space-md py-space-sm">
+          <span class="font-mono text-label-micro text-on-surface-variant uppercase">% de ingresos</span>
+          <span class="font-display text-headline-sm text-secondary">{{ ahorro().pct.toFixed(1) }}% del total</span>
+        </div>
+      </div>
+      <div class="flex flex-col gap-space-xs rounded-lg bg-surface-container-low p-space-md">
+        <div class="flex justify-between text-body-sm">
+          <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">tune</span>Destinación a ahorro</span>
+          <span class="font-mono text-secondary">{{ ahorro().pct.toFixed(1) }}%</span>
+        </div>
+        <div class="relative h-2 rounded-full bg-surface-container-high">
+          <div class="absolute inset-y-0 left-[33%] w-[33%] bg-secondary-container/50"></div>
+          <div class="absolute inset-y-0 left-0 rounded-full bg-secondary" [style.width.%]="(ahorro().pct / 30) * 100 > 100 ? 100 : (ahorro().pct / 30) * 100"></div>
+          <div class="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-secondary shadow" [style.left.%]="(ahorro().pct / 30) * 100 > 100 ? 100 : (ahorro().pct / 30) * 100"></div>
+        </div>
+        <div class="flex justify-between font-mono text-label-micro text-on-surface-variant">
+          <span>0%</span><span>Recomendado 10% – 20%</span><span>30%</span>
+        </div>
+      </div>
+
+      <span class="text-body-sm font-semibold text-on-surface-variant">Desglose de objetivos activos</span>
+      @for (m of metas(); track m.row) {
+        <div class="flex flex-col gap-space-xs rounded-lg bg-surface-container-low p-space-md">
+          <div class="flex flex-wrap items-center justify-between gap-x-space-sm gap-y-1">
+            <span class="flex items-center gap-space-xs text-body-md font-semibold">
+              <span class="material-symbols-outlined text-[18px] text-secondary">{{ iconFor(m.objetivo) }}</span>
+              <span>{{ m.objetivo }}</span>
+            </span>
+            <span class="flex-shrink-0 font-mono text-numeric-table font-semibold">{{ m.ahorrado | money }} / {{ m.meta | money }}</span>
+          </div>
+          <div class="h-1.5 overflow-hidden rounded-full bg-surface-container-high">
+            <div class="h-full rounded-full bg-secondary" [style.width.%]="m.pct"></div>
+          </div>
+          <div class="flex justify-between font-mono text-label-micro text-on-surface-variant">
+            <span>{{ m.pct }}% completado</span><span>Resta: {{ m.resta | money }}</span>
+          </div>
+        </div>
+      } @empty {
+        <p class="text-body-sm text-on-surface-variant">Aún no tienes objetivos de ahorro.</p>
+      }
+      <button type="button" class="flex h-11 items-center justify-center gap-space-xs rounded-lg border border-primary-container/15 text-label-md font-semibold" (click)="ui.open('meta')">
+        <span class="material-symbols-outlined text-[18px]">add</span> Nuevo objetivo
+      </button>
+    </div>
+  </section>
+
+  <!-- Remanente -->
+  <div class="flex flex-col gap-space-sm rounded-xl bg-primary-container p-space-lg text-white shadow-md">
+    <div class="flex items-center justify-between gap-space-sm">
+      <span class="flex items-center gap-space-xs font-display text-headline-sm">
+        <span class="material-symbols-outlined text-[20px] text-secondary-fixed-dim">calculate</span> Cálculo automático de remanente
+      </span>
+      <span class="rounded-full bg-secondary-fixed-dim px-2 py-0.5 font-mono text-label-micro text-on-secondary-fixed">Líquido</span>
+    </div>
+    <span class="text-body-sm text-on-primary-container">Disponible para compromisos fijos y gastos:</span>
+    <span class="font-display text-numeric-hero font-bold">{{ ahorro().remanente | money }}</span>
+    <span class="flex items-start gap-space-xs font-mono text-label-micro text-on-primary-container">
+      <span class="material-symbols-outlined text-[14px]">info</span>
+      Calculado: ({{ total() | money }} ingresos) − ({{ ahorro().programado | money }} ahorro programado)
+    </span>
+  </div>
+
+  <div class="flex items-center gap-space-sm rounded-xl bg-surface-container-low p-space-md">
+    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-container/40 text-secondary">
+      <span class="material-symbols-outlined text-[18px]">cloud_done</span>
+    </div>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <span class="text-body-md font-semibold">Sincronizado con Google Sheets</span>
+      <span class="truncate font-mono text-label-micro text-on-surface-variant">
+        Pestañas: [{{ tabs.ingresos }}] · [{{ tabs.ahorro }}]
+      </span>
+    </div>
+    <button type="button" aria-label="Sincronizar" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-container" (click)="store.load()">
+      <span class="material-symbols-outlined text-[18px]" [class.animate-spin]="store.loading()">sync</span>
+    </button>
+  </div>
+</div>

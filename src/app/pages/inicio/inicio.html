@@ -1,0 +1,278 @@
+<div class="flex flex-col gap-space-lg">
+  <!-- Saludo + mes -->
+  <div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+    <div class="flex min-w-0 flex-col">
+      <span class="text-body-sm font-medium text-on-surface-variant">Bienvenido de nuevo</span>
+      <h1 class="truncate text-headline-md">Hola{{ nombre() ? ', ' + nombre() : '' }} 👋</h1>
+    </div>
+    <app-month-picker />
+  </div>
+
+  <!-- Banner de sincronización -->
+  <div class="flex items-center justify-between rounded-xl bg-surface-container-low px-space-md py-space-sm shadow-sm">
+    <div class="flex min-w-0 items-center gap-space-sm">
+      <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-75"></span>
+        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-secondary"></span>
+      </span>
+      <div class="flex min-w-0 flex-col">
+        <div class="flex items-center gap-space-xs">
+          <span class="font-mono text-label-micro font-semibold tracking-wider text-secondary uppercase">
+            {{ session.isDemo() ? 'Datos de ejemplo' : 'Google Sheets al día' }}
+          </span>
+          <span class="text-body-sm text-on-surface-variant">•</span>
+          <span class="truncate text-body-sm text-on-surface-variant">{{ syncAgo() }}</span>
+        </div>
+        <span class="truncate font-mono text-label-micro text-outline">
+          {{ session.isDemo() ? 'Crea tu cuenta para guardar tus datos' : 'Cuenta: ' + store.perfil()?.usuario }}
+        </span>
+      </div>
+    </div>
+    <button
+      type="button"
+      aria-label="Sincronizar ahora"
+      class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-surface-container text-on-surface-variant transition-all hover:bg-surface-container-high"
+      (click)="store.load()"
+    >
+      <span class="material-symbols-outlined text-[16px]" [class.animate-spin]="store.loading()">sync</span>
+    </button>
+  </div>
+
+  <!-- Balance -->
+  <div class="relative flex flex-col gap-space-lg overflow-hidden rounded-xl bg-gradient-to-br from-primary-container via-[#0d2a24] to-secondary p-space-lg text-on-primary shadow-md">
+    <div class="pointer-events-none absolute -top-12 -right-12 h-48 w-48 opacity-10">
+      <svg class="h-full w-full text-secondary-container" fill="none" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-dasharray="6 4" stroke-width="8"></circle>
+        <circle cx="50" cy="50" r="24" stroke="currentColor" stroke-width="4"></circle>
+      </svg>
+    </div>
+    <div class="relative z-10 flex flex-col gap-space-xs">
+      <div class="flex items-center justify-between gap-space-sm">
+        <span class="text-label-md tracking-wider text-primary-fixed-dim uppercase">Balance disponible del mes</span>
+        @if (store.balanceTrend(); as trend) {
+          <span class="inline-flex items-center gap-1 rounded-full bg-secondary/40 px-2 py-0.5 font-mono text-label-micro text-secondary-fixed">
+            <span class="material-symbols-outlined text-[12px]">{{ trend >= 0 ? 'trending_up' : 'trending_down' }}</span>
+            {{ trend >= 0 ? '+' : '' }}{{ trend.toFixed(1) }}%
+          </span>
+        }
+      </div>
+      <div class="flex flex-wrap items-baseline gap-space-xs">
+        <span class="font-display text-numeric-hero font-bold tracking-tight" [class.text-tertiary-fixed-dim]="s().balance < 0">{{ s().balance | money }}</span>
+        <span class="text-body-sm text-primary-fixed-dim">COP</span>
+      </div>
+    </div>
+    <div class="relative z-10 grid grid-cols-3 gap-space-xs rounded-lg bg-primary/20 p-space-sm backdrop-blur-sm">
+      <div class="flex min-w-0 flex-col">
+        <div class="flex items-center gap-1">
+          <span class="h-1.5 w-1.5 rounded-full bg-secondary-fixed"></span>
+          <span class="truncate font-mono text-label-micro text-primary-fixed-dim">Ingresos</span>
+        </div>
+        <span class="mt-0.5 truncate font-mono text-[12px] leading-[18px] tracking-tighter font-bold sm:text-numeric-table text-secondary-fixed">{{ s().ingresos | money: true }}</span>
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <div class="flex items-center gap-1">
+          <span class="h-1.5 w-1.5 rounded-full bg-tertiary-fixed-dim"></span>
+          <span class="truncate font-mono text-label-micro text-primary-fixed-dim">Gastos</span>
+        </div>
+        <span class="mt-0.5 truncate font-mono text-[12px] leading-[18px] tracking-tighter font-bold sm:text-numeric-table text-tertiary-fixed-dim">{{ -s().gastos | money }}</span>
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <div class="flex items-center gap-1">
+          <span class="h-1.5 w-1.5 rounded-full bg-primary-fixed"></span>
+          <span class="truncate font-mono text-label-micro text-primary-fixed-dim">Ahorro</span>
+        </div>
+        <span class="mt-0.5 truncate font-mono text-[12px] leading-[18px] tracking-tighter font-bold sm:text-numeric-table text-primary-fixed">{{ s().ahorro | money }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones rápidas -->
+  <div class="no-scrollbar -mx-margin flex items-center gap-space-xs overflow-x-auto px-margin pb-1">
+    <button type="button" class="pill-btn bg-primary text-on-primary hover:bg-primary-container" (click)="ui.open('gasto')">
+      <span class="material-symbols-outlined text-[18px]">add_circle</span> Gasto
+    </button>
+    <button type="button" class="pill-btn bg-surface-container text-on-surface hover:bg-surface-container-high" (click)="ui.open('ingreso')">
+      <span class="material-symbols-outlined text-[18px] text-secondary">arrow_downward</span> Ingreso
+    </button>
+    <button type="button" class="pill-btn bg-surface-container text-on-surface hover:bg-surface-container-high" (click)="ui.open('meta')">
+      <span class="material-symbols-outlined text-[18px] text-surface-tint">savings</span> Ahorro
+    </button>
+    <a routerLink="/sheets" class="pill-btn bg-secondary-container/40 text-on-secondary-container hover:bg-secondary-container/60">
+      <span class="material-symbols-outlined text-[18px]">sync_alt</span> Sheets
+    </a>
+  </div>
+
+  <!-- Configurar salario -->
+  @if (!store.loading() && store.perfil() && !store.salario()) {
+    <a routerLink="/perfil" class="flex items-center gap-space-md rounded-xl border border-dashed border-secondary/40 bg-[#ECFDF5] p-space-md">
+      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-secondary-container/60 text-secondary">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <span class="font-display text-headline-sm">Configura tu salario</span>
+        <span class="text-body-sm text-on-surface-variant">Se sumará solo como ingreso cada mes.</span>
+      </div>
+      <span class="material-symbols-outlined text-secondary">chevron_right</span>
+    </a>
+  }
+
+  <!-- Prima de servicios -->
+  @if (store.prima(); as prima) {
+    @if (!prima.registrada) {
+      <div class="flex flex-col gap-space-sm rounded-xl bg-primary-container p-space-md text-white shadow-md">
+        <div class="flex items-center gap-space-xs font-mono text-label-micro font-semibold tracking-wider text-secondary-fixed-dim uppercase">
+          <span class="material-symbols-outlined text-[16px]">redeem</span> Prima de servicios · {{ prima.mes }}
+        </div>
+        <div class="flex flex-wrap items-end justify-between gap-space-sm">
+          <div class="flex flex-col">
+            <span class="text-body-sm text-on-primary-container">Monto sugerido (salario bruto ÷ 2)</span>
+            <span class="font-display text-headline-lg font-bold">{{ prima.monto | money }}</span>
+            <span class="font-mono text-label-micro text-on-primary-container">Se paga a más tardar el {{ prima.limite.getDate() }} de {{ prima.mes }}</span>
+          </div>
+          <button type="button" class="pill-btn bg-secondary-fixed-dim text-on-secondary-fixed" (click)="ui.openPrima(prima)">
+            <span class="material-symbols-outlined text-[18px]">add_circle</span> Registrar prima
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Hábito -->
+  @if (habito(); as h) {
+    <div class="flex items-center justify-between gap-space-md overflow-hidden rounded-xl bg-surface-container-low p-space-md shadow-sm">
+      <div class="flex min-w-0 flex-col gap-1">
+        <div
+          class="inline-flex items-center gap-1 font-mono text-label-micro font-semibold uppercase"
+          [class.text-secondary]="h.tone === 'ok'"
+          [class.text-amber-700]="h.tone === 'amber'"
+          [class.text-error]="h.tone === 'error'"
+        >
+          <span class="material-symbols-outlined text-[14px]">{{ h.icon }}</span> {{ h.tag }}
+        </div>
+        <h3 class="text-headline-sm">{{ h.title }}</h3>
+        <p class="text-body-sm text-on-surface-variant">{{ h.text }}</p>
+      </div>
+      <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-secondary-container/60 to-primary-fixed">
+        <span class="material-symbols-outlined text-[36px] text-on-secondary-fixed-variant">{{ h.tone === 'ok' ? 'spa' : 'monitoring' }}</span>
+      </div>
+    </div>
+  }
+
+  <!-- Meta de ahorro -->
+  @if (store.metas().length) {
+    <a routerLink="/ingresos" class="card flex flex-col gap-space-md p-space-md">
+      <div class="flex items-center justify-between gap-space-sm">
+        <div class="flex min-w-0 items-center gap-space-sm">
+          <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-secondary-container/40 text-secondary">
+            <span class="material-symbols-outlined text-[20px]">{{ iconFor(store.metas()[0].objetivo) }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col">
+            <span class="text-headline-sm font-display">Metas de ahorro</span>
+            <span class="truncate text-body-sm text-on-surface-variant">
+              @for (m of store.metas(); track m.row; let last = $last) { {{ m.objetivo }}{{ last ? '' : ' / ' }} }
+            </span>
+          </div>
+        </div>
+        <span class="rounded-full bg-secondary-container/30 px-2 py-0.5 font-mono text-numeric-table font-bold text-secondary">{{ store.ahorroMeta().pct }}%</span>
+      </div>
+      <div class="flex flex-col gap-space-xs">
+        <div class="h-3 w-full overflow-hidden rounded-full bg-surface-container p-0.5">
+          <div class="h-full rounded-full bg-secondary transition-all duration-700" [style.width.%]="store.ahorroMeta().pct"></div>
+        </div>
+        <div class="flex items-center justify-between font-mono text-label-micro">
+          <span class="font-semibold text-on-surface">{{ store.ahorroMeta().ahorrado | money }} recolectados</span>
+          <span class="text-on-surface-variant">Meta: {{ store.ahorroMeta().meta | money }}</span>
+        </div>
+      </div>
+    </a>
+  }
+
+  <!-- Próximos vencimientos -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <div class="flex items-center gap-space-xs">
+        <span class="material-symbols-outlined text-[18px] text-error">notification_important</span>
+        <h2 class="text-headline-sm">Próximos vencimientos fijos</h2>
+      </div>
+      <a routerLink="/fijos" class="rounded-full bg-surface-container px-2 py-0.5 font-mono text-label-micro text-on-surface-variant">
+        {{ vencimientos().length }} pendientes
+      </a>
+    </div>
+    @for (v of vencimientos(); track v.fijo.row) {
+      <a routerLink="/fijos" class="card flex items-center justify-between gap-space-sm p-space-md">
+        <div class="flex min-w-0 items-center gap-space-md">
+          <div
+            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
+            [class]="v.urgente ? 'bg-tertiary-fixed/60 text-on-tertiary-fixed' : 'bg-primary-fixed text-on-primary-fixed'"
+          >
+            <span class="material-symbols-outlined text-[20px]">{{ iconFor(v.fijo.servicio, v.fijo.categoria) }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col">
+            <span class="truncate text-body-md font-semibold">{{ v.fijo.servicio }}</span>
+            <div class="flex items-center gap-space-xs font-mono text-label-micro">
+              <span class="whitespace-nowrap" [class]="v.urgente ? 'font-medium text-error' : 'text-on-surface-variant'">{{ v.texto }}</span>
+              @if (v.fijo.proveedor) {
+                <span class="text-outline-variant">•</span>
+                <span class="truncate text-on-surface-variant">{{ v.fijo.proveedor }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-shrink-0 flex-col items-end">
+          <span class="font-mono text-numeric-table font-semibold">{{ v.fijo.monto | money }}</span>
+          <span
+            class="mt-0.5 rounded-full px-2 py-0.5 font-mono text-label-micro"
+            [class]="v.urgente ? 'bg-error-container/40 text-error' : 'bg-surface-container text-outline'"
+            >Pendiente</span
+          >
+        </div>
+      </a>
+    } @empty {
+      <div class="card flex items-center gap-space-sm p-space-md text-body-md text-on-surface-variant">
+        <span class="material-symbols-outlined text-secondary">task_alt</span>
+        Todo al día: no hay fijos pendientes este mes.
+      </div>
+    }
+  </section>
+
+  <!-- Últimos movimientos -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <h2 class="text-headline-sm">Últimos movimientos</h2>
+      <a routerLink="/gastos" class="flex items-center gap-0.5 text-label-md font-semibold text-secondary hover:underline">
+        Ver todos <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+      </a>
+    </div>
+    <div class="card flex flex-col overflow-hidden">
+      @for (m of ultimos(); track m.pestana + m.fila; let last = $last) {
+        <div class="flex items-center justify-between gap-space-sm p-space-md transition-colors hover:bg-surface-container-low">
+          <div class="flex min-w-0 items-center gap-space-md">
+            <div
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
+              [class]="m.monto > 0 ? 'bg-secondary-container/50 text-secondary' : 'bg-surface-container text-on-surface-variant'"
+            >
+              <span class="material-symbols-outlined text-[20px]">{{ iconFor(m.titulo, m.etiqueta) }}</span>
+            </div>
+            <div class="flex min-w-0 flex-col">
+              <span class="truncate text-body-md font-medium">{{ m.titulo }}</span>
+              <div class="flex items-center gap-space-xs font-mono text-label-micro">
+                <span class="text-on-surface-variant">{{ relativeDay(m.fecha) }}</span>
+                <span class="text-outline-variant">•</span>
+                <span class="text-outline">{{ m.pestana }} #{{ m.fila }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex max-w-[8rem] flex-shrink-0 flex-col items-end">
+            <span class="font-mono text-numeric-table whitespace-nowrap" [class]="m.monto > 0 ? 'font-bold text-secondary' : 'font-semibold text-on-surface'">{{ m.monto | money: true }}</span>
+            <span class="max-w-full truncate font-mono text-label-micro text-on-surface-variant">{{ m.etiqueta }}</span>
+          </div>
+        </div>
+        @if (!last) {
+          <div class="mx-space-md h-px bg-surface-container"></div>
+        }
+      } @empty {
+        <p class="p-space-md text-body-md text-on-surface-variant">Aún no hay movimientos registrados.</p>
+      }
+    </div>
+  </section>
+</div>

@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block') layer(icons);
+@layer icons, theme, base, components, utilities;
+@import 'tailwindcss';
+
+/* Tokens del sistema "Precision Editorial Finance" (prototipo/precision_editorial_finance/DESIGN.md) */
+@theme {
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #0f1c2c;
+  --color-on-primary-container: #778598;
+  --color-primary-fixed: #d6e4f9;
+  --color-primary-fixed-dim: #bac8dc;
+  --color-on-primary-fixed: #0f1c2c;
+  --color-on-primary-fixed-variant: #3a4859;
+  --color-secondary: #006c49;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #7ef6be;
+  --color-on-secondary-container: #00714c;
+  --color-secondary-fixed: #81f9c1;
+  --color-secondary-fixed-dim: #63dca6;
+  --color-on-secondary-fixed: #002113;
+  --color-on-secondary-fixed-variant: #005236;
+  --color-tertiary: #000000;
+  --color-tertiary-container: #40000c;
+  --color-on-tertiary-container: #f83256;
+  --color-tertiary-fixed: #ffdada;
+  --color-tertiary-fixed-dim: #ffb3b6;
+  --color-on-tertiary-fixed: #40000c;
+  --color-on-tertiary-fixed-variant: #920028;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-surface: #f7f9fb;
+  --color-surface-dim: #d8dadc;
+  --color-surface-bright: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e3e5;
+  --color-surface-variant: #e0e3e5;
+  --color-surface-tint: #525f71;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #44474c;
+  --color-inverse-surface: #2d3133;
+  --color-inverse-on-surface: #eff1f3;
+  --color-outline: #74777d;
+  --color-outline-variant: #c4c6cc;
+  --color-background: #f7f9fb;
+
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  --spacing-gutter: 1rem;
+  --spacing-margin: 1rem;
+  --spacing-margin-tablet: 2rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --text-display-lg: 30px;
+  --text-display-lg--line-height: 38px;
+  --text-display-lg--letter-spacing: -0.025em;
+  --text-headline-lg: 26px;
+  --text-headline-lg--line-height: 34px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--letter-spacing: -0.015em;
+  --text-headline-sm: 16px;
+  --text-headline-sm--line-height: 22px;
+  --text-headline-sm--letter-spacing: -0.01em;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 18px;
+  --text-numeric-hero: 32px;
+  --text-numeric-hero--line-height: 40px;
+  --text-numeric-hero--letter-spacing: -0.02em;
+  --text-numeric-table: 13px;
+  --text-numeric-table--line-height: 18px;
+  --text-numeric-table--letter-spacing: -0.01em;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-micro: 10px;
+  --text-label-micro--line-height: 14px;
+  --text-label-micro--letter-spacing: 0.04em;
+}
+
+@utility card {
+  @apply bg-surface-container-lowest rounded-xl shadow-sm;
+}
+
+@utility pill-btn {
+  @apply flex flex-shrink-0 items-center justify-center gap-space-xs rounded-full px-space-md py-space-sm text-label-md font-semibold shadow-sm transition-all active:scale-95;
+}
+
+@utility field {
+  @apply h-11 w-full rounded-lg border border-transparent bg-surface-container-low px-3 text-body-md text-on-surface outline-none transition focus:border-primary-container focus:bg-white focus:ring-2 focus:ring-primary-container/10;
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    overscroll-behavior: none;
+  }
+  body {
+    @apply bg-surface font-body text-body-md text-on-surface antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  line-height: 1;
+  user-select: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}

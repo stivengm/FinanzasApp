@@ -1,0 +1,164 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex flex-wrap items-end justify-between gap-space-sm pt-space-xs">
+    <div class="flex flex-col">
+      <span class="font-mono text-label-micro tracking-wider text-on-surface-variant uppercase">Telemetría contable</span>
+      <h1 class="text-headline-lg">Analítica &amp; Sheets</h1>
+    </div>
+    <app-month-picker />
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 gap-space-sm sm:grid-cols-2">
+    <div class="card flex flex-col gap-space-xs p-space-md">
+      <div class="flex items-center justify-between">
+        <span class="text-body-md text-on-surface-variant">Tasa de ahorro</span>
+        <span class="rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container">{{ tasaAhorro().label }}</span>
+      </div>
+      <span class="font-display text-display-lg font-bold">{{ tasaAhorro().actual.toFixed(1) }}%</span>
+      <div class="h-1.5 overflow-hidden rounded-full bg-surface-container">
+        <div class="h-full rounded-full bg-secondary" [style.width.%]="tasaAhorro().actual > 100 ? 100 : tasaAhorro().actual"></div>
+      </div>
+      <span class="flex items-center gap-1 font-mono text-label-micro" [class]="tasaAhorro().delta >= 0 ? 'text-secondary' : 'text-error'">
+        <span class="material-symbols-outlined text-[14px]">{{ tasaAhorro().delta >= 0 ? 'arrow_upward' : 'arrow_downward' }}</span>
+        {{ tasaAhorro().delta >= 0 ? '+' : '' }}{{ tasaAhorro().delta.toFixed(1) }}% vs {{ tasaAhorro().prevMonth }}
+      </span>
+    </div>
+    <div class="card flex min-w-0 flex-col gap-space-xs p-space-md">
+      <div class="flex items-center justify-between">
+        <span class="text-body-md text-on-surface-variant">Margen libre</span>
+        <span class="h-2 w-2 rounded-full" [class]="margen().balance >= 0 ? 'bg-secondary' : 'bg-error'"></span>
+      </div>
+      <span class="font-mono text-label-micro text-on-surface-variant">Disponible neto</span>
+      <span class="truncate font-display text-display-lg font-bold" [class.text-error]="margen().balance < 0">{{ margen().balance | money }}</span>
+      <span class="font-mono text-label-micro text-on-surface-variant">{{ margen().pct.toFixed(1) }}% del ingreso sin comprometer</span>
+    </div>
+  </div>
+
+  <!-- Donut -->
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-col">
+      <h2 class="text-headline-md">¿A dónde se va tu dinero?</h2>
+      <span class="text-body-sm text-on-surface-variant">Distribución del total comprometido ({{ distribucion().total | money }})</span>
+    </div>
+    <div class="relative mx-auto h-52 w-52">
+      <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90">
+        <circle cx="60" cy="60" [attr.r]="radius" fill="none" stroke="#eceef0" stroke-width="14" />
+        @for (seg of distribucion().items; track seg.label) {
+          @if (seg.pct > 0) {
+            <circle
+              cx="60"
+              cy="60"
+              [attr.r]="radius"
+              fill="none"
+              [attr.stroke]="seg.color"
+              stroke-width="14"
+              [attr.stroke-dasharray]="seg.dash"
+              [attr.stroke-dashoffset]="seg.offset"
+              class="transition-all duration-700"
+            >
+              <title>{{ seg.label }}: {{ seg.pct.toFixed(0) }}%</title>
+            </circle>
+          }
+        }
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <span class="font-mono text-label-micro text-on-surface-variant uppercase">Total del mes</span>
+        <span class="font-display text-headline-md font-bold">{{ distribucion().total | short }}</span>
+        <span class="font-mono text-label-micro text-on-surface-variant">{{ distribucion().total | money }}</span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-space-xs">
+      @for (seg of distribucion().items; track seg.label) {
+        <div class="flex items-center justify-between gap-space-sm rounded-lg bg-surface-container-low p-space-sm">
+          <div class="flex min-w-0 items-center gap-space-sm">
+            <span class="h-3 w-3 flex-shrink-0 rounded-full" [style.background]="seg.color"></span>
+            <div class="flex min-w-0 flex-col">
+              <span class="truncate text-body-md font-medium">{{ seg.label }}</span>
+              <span class="truncate font-mono text-label-micro text-on-surface-variant">{{ seg.hint }}</span>
+            </div>
+          </div>
+          <div class="flex flex-shrink-0 flex-col items-end">
+            <span class="font-mono text-numeric-table font-semibold" [class]="seg.text">{{ seg.value | money }}</span>
+            <span class="font-mono text-label-micro" [class]="seg.text">{{ seg.pct.toFixed(0) }}%</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Trimestral -->
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex items-start justify-between gap-space-sm">
+      <div class="flex flex-col">
+        <h2 class="text-headline-md">Evolución trimestral</h2>
+        <span class="text-body-sm text-on-surface-variant">Ingresos vs gastos totales</span>
+      </div>
+      <div class="flex flex-shrink-0 gap-space-sm font-mono text-label-micro text-on-surface-variant">
+        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-secondary"></span>Ingresos</span>
+        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-primary-container"></span>Gastos</span>
+      </div>
+    </div>
+    <div class="grid h-56 grid-cols-3 items-end gap-space-sm">
+      @for (m of trimestre(); track m.label) {
+        <div class="flex h-full flex-col items-center justify-end gap-space-xs rounded-lg p-space-xs" [class.bg-surface-container-low]="m.actual">
+          <div class="flex h-36 w-full items-end justify-center gap-1.5">
+            <div class="relative w-7 rounded-t-md transition-all duration-700" [class]="m.actual ? 'bg-secondary' : 'bg-secondary/70'" [style.height.%]="m.hIng">
+              @if (m.actual) {
+                <span class="absolute -top-5 left-1/2 -translate-x-1/2 font-mono text-label-micro whitespace-nowrap text-secondary">{{ m.ingresos | short }}</span>
+              }
+            </div>
+            <div class="relative w-7 rounded-t-md transition-all duration-700" [class]="m.actual ? 'bg-primary-container' : 'bg-primary-container/75'" [style.height.%]="m.hGas">
+              @if (m.actual) {
+                <span class="absolute -top-5 left-1/2 -translate-x-1/2 font-mono text-label-micro whitespace-nowrap">{{ m.gastos | short }}</span>
+              }
+            </div>
+          </div>
+          <span class="font-display" [class]="m.actual ? 'text-headline-sm' : 'text-body-sm text-on-surface-variant'">{{ m.label }}</span>
+          @if (m.actual) {
+            <span class="font-mono text-label-micro" [class]="m.superavit ? 'text-secondary' : 'text-error'">{{ m.superavit ? 'Superávit' : 'Déficit' }}</span>
+          } @else {
+            <span class="font-mono text-label-micro text-on-surface-variant">{{ m.ingresos | short }} / {{ m.gastos | short }}</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Hub -->
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex items-start justify-between gap-space-sm">
+      <div class="flex min-w-0 items-center gap-space-sm">
+        <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-[#ECFDF5] text-[#107C41]">
+          <span class="material-symbols-outlined">table_view</span>
+        </div>
+        <div class="flex min-w-0 flex-col">
+          <span class="font-display text-headline-sm">Google Sheets Hub</span>
+          <span class="truncate font-mono text-label-micro text-on-surface-variant">
+            {{ session.isDemo() ? 'Modo demo (sin hoja)' : 'Cuenta: ' + store.perfil()?.usuario }}
+          </span>
+        </div>
+      </div>
+      <span class="flex flex-shrink-0 items-center gap-1 rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container">
+        <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>Bidireccional
+      </span>
+    </div>
+    <div class="flex items-center justify-between rounded-lg bg-surface-container-low px-space-md py-space-sm text-body-md">
+      <span class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">history</span>Última sincronización:</span>
+      <span class="font-mono font-semibold">{{ syncAgo() }}</span>
+    </div>
+    <div class="flex flex-col gap-space-xs">
+      <span class="font-mono text-label-micro tracking-wider text-on-surface-variant uppercase">Pestañas del libro vinculadas</span>
+      <div class="flex flex-wrap gap-space-xs">
+        @for (p of pestanas; track p.key) {
+          <span class="flex items-center gap-1 rounded-full border border-outline-variant px-2 py-1 font-mono text-label-micro text-on-surface">
+            <span class="material-symbols-outlined text-[14px] text-secondary">check_circle</span>{{ p.name }}
+          </span>
+        }
+      </div>
+    </div>
+    <button type="button" class="flex h-12 w-full items-center justify-center gap-space-sm rounded-lg bg-primary text-label-md font-semibold text-on-primary transition-all active:scale-[0.98] disabled:opacity-60" [disabled]="store.loading()" (click)="sync()">
+      <span class="material-symbols-outlined text-[20px]" [class.animate-spin]="store.loading()">sync</span> Sincronizar ahora con Google Sheets
+    </button>
+    <a routerLink="/perfil" class="text-center text-label-md font-semibold text-secondary hover:underline">Mi perfil y salario</a>
+  </div>
+</div>

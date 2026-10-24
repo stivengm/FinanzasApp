@@ -1,0 +1,98 @@
+<div class="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-space-lg px-margin py-space-xl">
+  <div class="flex flex-col items-center gap-space-sm text-center">
+    <img src="logo.svg" alt="" class="h-14 w-14" />
+    <h1 class="text-headline-lg">FinanzSync</h1>
+    <p class="text-body-md text-on-surface-variant">Tus finanzas personales, sincronizadas con Google Sheets.</p>
+  </div>
+
+  @if (!session.backendListo) {
+    <div class="flex items-start gap-space-sm rounded-xl bg-amber-100 p-space-md text-amber-900">
+      <span class="material-symbols-outlined text-[20px]">construction</span>
+      <p class="text-body-sm">
+        Falta conectar el servidor: pega la URL del Apps Script en <code class="font-mono">src/app/app.settings.ts</code>.
+        Mientras tanto puedes explorar el modo demo.
+      </p>
+    </div>
+  }
+
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="grid grid-cols-2 gap-1 rounded-xl bg-surface-container-low p-1" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="modo() === 'ingresar'"
+        class="h-9 rounded-lg text-body-md transition-all"
+        [class]="modo() === 'ingresar' ? 'bg-primary font-semibold text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'"
+        (click)="cambiar('ingresar')"
+      >
+        Ingresar
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="modo() === 'registro'"
+        class="h-9 rounded-lg text-body-md transition-all"
+        [class]="modo() === 'registro' ? 'bg-primary font-semibold text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'"
+        (click)="cambiar('registro')"
+      >
+        Crear cuenta
+      </button>
+    </div>
+
+    <form class="flex flex-col gap-space-md" (ngSubmit)="enviar()">
+      <label class="flex flex-col gap-space-xs">
+        <span class="text-label-md text-on-surface-variant">Usuario o correo</span>
+        <input class="field" name="usuario" [(ngModel)]="usuario" autocomplete="username" autocapitalize="none" placeholder="tu@correo.com" />
+      </label>
+      <label class="flex flex-col gap-space-xs">
+        <span class="text-label-md text-on-surface-variant">Clave</span>
+        <div class="relative">
+          <input
+            class="field pr-11"
+            name="clave"
+            [type]="verClave() ? 'text' : 'password'"
+            [(ngModel)]="clave"
+            [attr.autocomplete]="modo() === 'registro' ? 'new-password' : 'current-password'"
+          />
+          <button
+            type="button"
+            class="absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
+            [attr.aria-label]="verClave() ? 'Ocultar clave' : 'Mostrar clave'"
+            (click)="verClave.set(!verClave())"
+          >
+            <span class="material-symbols-outlined text-[20px]">{{ verClave() ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
+      </label>
+      @if (modo() === 'registro') {
+        <label class="flex flex-col gap-space-xs">
+          <span class="text-label-md text-on-surface-variant">Confirmar clave</span>
+          <input class="field" name="confirmar" [type]="verClave() ? 'text' : 'password'" [(ngModel)]="confirmar" autocomplete="new-password" />
+        </label>
+      }
+
+      @if (error(); as err) {
+        <div class="flex items-start gap-space-xs rounded-lg bg-error-container/50 p-space-sm text-body-sm text-on-error-container" role="alert">
+          <span class="material-symbols-outlined text-[18px]">error</span>{{ err }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        [disabled]="enviando() || !session.backendListo"
+        class="flex h-12 items-center justify-center gap-space-xs rounded-lg bg-primary-container text-label-md font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50"
+      >
+        @if (enviando()) {
+          <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+        }
+        {{ modo() === 'registro' ? 'Crear mi cuenta' : 'Ingresar' }}
+      </button>
+    </form>
+
+    @if (modo() === 'registro') {
+      <p class="text-center text-body-sm text-on-surface-variant">Solo necesitas usuario y clave. Luego configuras tu salario.</p>
+    }
+  </div>
+
+  <button type="button" class="text-label-md font-semibold text-on-surface-variant underline" (click)="demo()">Explorar con datos de ejemplo</button>
+</div>

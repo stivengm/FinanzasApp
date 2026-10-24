@@ -1,0 +1,149 @@
+@if (ui.form(); as kind) {
+  <app-bottom-sheet [title]="title()" (close)="close()">
+    @switch (kind) {
+      @case ('gasto') {
+        <form [formGroup]="gasto" (ngSubmit)="submit('gasto')" class="flex flex-col gap-space-md">
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Descripción</span>
+            <input class="field" formControlName="descripcion" placeholder="Ej. Almuerzo con familia" />
+          </label>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Monto (COP)</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Fecha</span>
+              <input class="field" type="date" formControlName="fecha" />
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Categoría</span>
+              <select class="field" formControlName="categoria">
+                @for (c of categorias; track c) { <option [value]="c">{{ c }}</option> }
+              </select>
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Método de pago</span>
+              <select class="field" formControlName="metodoPago">
+                @for (m of metodos; track m) { <option [value]="m">{{ m }}</option> }
+              </select>
+            </label>
+          </div>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Detalle (opcional)</span>
+            <input class="field" formControlName="detalle" placeholder="Lugar, nota…" />
+          </label>
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
+      @case ('ingreso') {
+        <form [formGroup]="ingreso" (ngSubmit)="submit('ingreso')" class="flex flex-col gap-space-md">
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Fuente</span>
+            <input class="field" formControlName="fuente" placeholder="Ej. Freelance, arriendo, prima…" />
+          </label>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Monto (COP)</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Fecha</span>
+              <input class="field" type="date" formControlName="fecha" />
+            </label>
+          </div>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Tipo</span>
+            <select class="field" formControlName="tipo">
+              @for (t of tiposIngreso; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </label>
+          <p class="text-body-sm text-on-surface-variant">Tu salario ya se suma solo cada mes (Perfil). Aquí registras lo adicional de este mes.</p>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Descripción (opcional)</span>
+            <input class="field" formControlName="descripcion" placeholder="Empresa, cliente…" />
+          </label>
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
+      @case ('fijo') {
+        <form [formGroup]="fijo" (ngSubmit)="submit('fijo')" class="flex flex-col gap-space-md">
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Servicio</span>
+            <input class="field" formControlName="servicio" placeholder="Ej. Servicio de Luz" />
+          </label>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Monto (COP)</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Día de pago</span>
+              <input class="field" type="number" min="1" max="31" formControlName="diaPago" />
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Frecuencia</span>
+              <select class="field" formControlName="frecuencia">
+                @for (f of frecuencias; track f) { <option [value]="f">{{ f }}</option> }
+              </select>
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Categoría</span>
+              <input class="field" formControlName="categoria" />
+            </label>
+          </div>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Proveedor (opcional)</span>
+            <input class="field" formControlName="proveedor" placeholder="Empresa que factura" />
+          </label>
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
+      @case ('meta') {
+        <form [formGroup]="meta" (ngSubmit)="submit('meta')" class="flex flex-col gap-space-md">
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Objetivo</span>
+            <input class="field" formControlName="objetivo" placeholder="Ej. Fondo de emergencia" />
+          </label>
+          <div class="grid grid-cols-3 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Meta</span>
+              <input class="field font-mono" type="number" min="0" formControlName="meta" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Ahorrado</span>
+              <input class="field font-mono" type="number" min="0" formControlName="ahorrado" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Aporte/mes</span>
+              <input class="field font-mono" type="number" min="0" formControlName="aporteMensual" />
+            </label>
+          </div>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Descripción (opcional)</span>
+            <input class="field" formControlName="descripcion" />
+          </label>
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
+    }
+  </app-bottom-sheet>
+}
+
+<ng-template #actions>
+  <button
+    type="submit"
+    [disabled]="store.saving()"
+    class="mt-space-xs flex h-12 w-full items-center justify-center gap-space-sm rounded-lg bg-primary-container text-label-md font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
+  >
+    @if (store.saving()) {
+      <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Guardando…
+    } @else {
+      <span class="material-symbols-outlined text-[18px]">cloud_upload</span> Guardar en la hoja
+    }
+  </button>
+</ng-template>

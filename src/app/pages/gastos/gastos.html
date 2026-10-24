@@ -1,0 +1,125 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex flex-wrap items-end justify-between gap-space-sm pt-space-xs">
+    <div class="flex flex-col">
+      <span class="font-mono text-label-micro tracking-wider text-on-surface-variant uppercase">Gestión flexible</span>
+      <h1 class="text-headline-lg">Gastos Variables &amp; Ocasionales</h1>
+    </div>
+    <app-month-picker />
+  </div>
+
+  <label class="relative block">
+    <span class="material-symbols-outlined pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[20px] text-on-surface-variant">search</span>
+    <input class="field h-12 pl-10" type="search" placeholder="Buscar gasto (ej. Almuerzo, Fiesta…)" [ngModel]="query()" (ngModelChange)="query.set($event)" />
+  </label>
+
+  <!-- Resumen -->
+  <div class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex items-center justify-between">
+      <span class="flex items-center gap-1 font-mono text-label-micro font-semibold tracking-wider uppercase">
+        <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span> Resumen del mes
+      </span>
+    </div>
+    <div class="flex flex-wrap items-end justify-between gap-space-md">
+      <div class="flex flex-col">
+        <span class="text-body-md text-on-surface-variant">Total gastos variables</span>
+        <span class="font-display text-numeric-hero font-bold">{{ total() | money }}</span>
+      </div>
+      <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low px-space-md py-space-sm">
+        <span class="flex items-center justify-between gap-space-md font-mono text-label-micro text-on-surface-variant">
+          Promedio diario <span class="material-symbols-outlined text-[16px] text-secondary">trending_down</span>
+        </span>
+        <span class="font-display text-headline-md">{{ promedioDiario() | money }}</span>
+      </div>
+    </div>
+    @if (barra().length) {
+      <div class="flex flex-col gap-space-xs">
+        <div class="flex h-2 overflow-hidden rounded-full bg-surface-container">
+          @for (b of barra(); track b.name) {
+            <div [class]="b.color" [style.width.%]="b.pct" [title]="b.name"></div>
+          }
+        </div>
+        <div class="flex flex-wrap gap-x-space-md gap-y-1 font-mono text-label-micro text-on-surface-variant">
+          @for (b of barra(); track b.name) {
+            <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full" [class]="b.color"></span>{{ b.pct }}% {{ b.name }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Chips -->
+  <div class="no-scrollbar -mx-margin flex gap-space-xs overflow-x-auto px-margin">
+    <button
+      type="button"
+      class="flex-shrink-0 rounded-full px-space-md py-space-xs text-body-md transition-colors"
+      [class]="categoria() === null ? 'bg-primary text-on-primary font-semibold' : 'bg-surface-container text-on-surface hover:bg-surface-container-high'"
+      (click)="categoria.set(null)"
+    >
+      Todos
+    </button>
+    @for (c of porCategoria(); track c[0]) {
+      <button
+        type="button"
+        class="flex-shrink-0 rounded-full px-space-md py-space-xs text-body-md whitespace-nowrap transition-colors"
+        [class]="categoria() === c[0] ? 'bg-primary text-on-primary font-semibold' : 'bg-surface-container text-on-surface hover:bg-surface-container-high'"
+        (click)="categoria.set(c[0])"
+      >
+        {{ c[0] }}
+      </button>
+    }
+  </div>
+
+  <!-- Movimientos -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <h2 class="text-headline-sm">Movimientos registrados</h2>
+      <span class="rounded-full bg-surface-container px-2 py-0.5 font-mono text-label-micro text-on-surface-variant">{{ lista().length }} registros</span>
+    </div>
+    @for (g of lista(); track g.row) {
+      <div class="card flex flex-col gap-space-sm p-space-md">
+        <div class="flex items-start justify-between gap-space-sm">
+          <div class="flex min-w-0 items-center gap-space-md">
+            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-surface-container text-on-surface-variant">
+              <span class="material-symbols-outlined text-[20px]">{{ iconFor(g.descripcion, g.categoria) }}</span>
+            </div>
+            <div class="flex min-w-0 flex-col">
+              <span class="truncate text-body-lg font-medium">{{ g.descripcion }}</span>
+              @if (g.detalle) { <span class="truncate text-body-sm text-on-surface-variant">{{ g.detalle }}</span> }
+            </div>
+          </div>
+          <div class="flex flex-shrink-0 flex-col items-end">
+            <span class="font-mono text-numeric-table font-semibold">{{ -g.monto | money }}</span>
+            <span class="font-mono text-label-micro text-on-surface-variant">{{ hora(g.fecha) }}</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between rounded-lg bg-surface-container-low px-space-sm py-space-xs font-mono text-label-micro text-on-surface-variant">
+          <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">sell</span>{{ g.categoria || 'Sin categoría' }}</span>
+          @if (g.metodoPago) {
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">{{ methodIcon(g.metodoPago) }}</span>{{ g.metodoPago }}</span>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="card p-space-md text-body-md text-on-surface-variant">
+        {{ query() || categoria() ? 'Ningún gasto coincide con la búsqueda.' : 'No hay gastos registrados este mes.' }}
+      </div>
+    }
+  </section>
+
+  <div class="flex items-center gap-space-sm rounded-xl border border-secondary/20 bg-[#ECFDF5] p-space-md">
+    <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-secondary-container/60 text-secondary">
+      <span class="material-symbols-outlined text-[18px]">sync_saved_locally</span>
+    </div>
+    <span class="font-mono text-label-micro text-on-secondary-fixed-variant">
+      Sincronizado con Google Sheets<br />Hoja activa: [{{ tabs.gastos }}]
+    </span>
+  </div>
+</div>
+
+<button
+  type="button"
+  class="fixed right-[max(1rem,calc(50%-21rem))] bottom-24 z-40 flex h-12 items-center gap-space-sm rounded-full bg-primary px-space-lg text-label-md font-semibold text-on-primary shadow-lg transition-all active:scale-95"
+  (click)="ui.open('gasto')"
+>
+  <span class="material-symbols-outlined text-[20px]">add</span> Registrar nuevo gasto
+</button>
