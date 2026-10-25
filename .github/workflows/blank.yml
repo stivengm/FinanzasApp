@@ -38,6 +38,11 @@ jobs:
       - name: Build app to release/QA
         run: npm run build -- --base-href=/FinanzasApp/
 
+      # GitHub Pages no conoce las rutas de Angular: con 404.html = index.html,
+      # recargar /FinanzasApp/inicio carga la app y el router abre la página correcta.
+      - name: SPA fallback (404.html)
+        run: cp dist/finanzas-app/browser/index.html dist/finanzas-app/browser/404.html
+
       # Deploy to GitHub Pages
       - name: Deploy to Pages
         uses: crazy-max/ghaction-github-pages@v5.0.0
