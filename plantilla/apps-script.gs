@@ -8,7 +8,7 @@
  * Instalación: ver README.md → "Configurar el backend".
  */
 const HOJAS = {
-  usuarios: { nombre: 'Usuarios', columnas: ['Usuario', 'Clave', 'Nombre', 'Salario', 'Token', 'Registrado'] },
+  usuarios: { nombre: 'Usuarios', columnas: ['Usuario', 'Clave', 'Nombre', 'Salario', 'Token', 'Registrado', 'Tipo Salario', 'Fecha Ingreso'] },
   ingresos: { nombre: 'Ingresos', columnas: ['Usuario', 'Fecha', 'Fuente', 'Descripción', 'Tipo', 'Monto'] },
   ahorro: { nombre: 'Ahorro', columnas: ['Usuario', 'Objetivo', 'Descripción', 'Meta', 'Ahorrado', 'Aporte Mensual'] },
   fijos: { nombre: 'Fijos', columnas: ['Usuario', 'Servicio', 'Proveedor', 'Categoría', 'Frecuencia', 'Día de Pago', 'Monto'] },
@@ -53,8 +53,9 @@ const ACCIONES = {
         salario: 0,
         token: token,
         registrado: new Date(),
+        tiposalario: 'Fijo',
       });
-      return { token: token, perfil: { usuario: usuario, nombre: String(b.nombre || '').trim(), salario: 0 } };
+      return { token: token, perfil: perfil_(buscarUsuario_(usuario)) };
     });
   },
 
@@ -102,6 +103,8 @@ const ACCIONES = {
     const v = b.values || {};
     if (v.nombre !== undefined) escribirCelda_(u, 'nombre', String(v.nombre).trim());
     if (v.salario !== undefined) escribirCelda_(u, 'salario', Number(v.salario) || 0);
+    if (v.tipoSalario !== undefined) escribirCelda_(u, 'tiposalario', v.tipoSalario === 'Variable' ? 'Variable' : 'Fijo');
+    if (v.fechaIngreso !== undefined) escribirCelda_(u, 'fechaingreso', aCelda_('Fecha Ingreso', v.fechaIngreso));
     return { perfil: perfil_(buscarUsuario_(u.datos.usuario)) };
   },
 };
@@ -178,7 +181,13 @@ function escribirCelda_(u, campo, valor) {
 }
 
 function perfil_(u) {
-  return { usuario: String(u.datos.usuario), nombre: String(u.datos.nombre || ''), salario: Number(u.datos.salario) || 0 };
+  return {
+    usuario: String(u.datos.usuario),
+    nombre: String(u.datos.nombre || ''),
+    salario: Number(u.datos.salario) || 0,
+    tipoSalario: u.datos.tiposalario === 'Variable' ? 'Variable' : 'Fijo',
+    fechaIngreso: u.datos.fechaingreso ? String(celda_(u.datos.fechaingreso)) : '',
+  };
 }
 
 function conLock_(fn) {

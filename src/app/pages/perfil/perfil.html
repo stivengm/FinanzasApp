@@ -33,45 +33,82 @@
       <span class="text-label-md text-on-surface-variant">Nombre (opcional)</span>
       <input class="field" name="nombre" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" placeholder="¿Cómo te llamamos?" autocomplete="given-name" />
     </label>
-    <label class="flex flex-col gap-space-xs">
-      <span class="text-label-md text-on-surface-variant">Salario mensual bruto (COP, antes de descuentos)</span>
-      <input
-        class="field font-mono"
-        name="salario"
-        type="number"
-        min="0"
-        inputmode="numeric"
-        [ngModel]="salario()"
-        (ngModelChange)="salario.set($event)"
-        placeholder="Ej. 5000000"
-      />
-    </label>
-
-    @if (desglose().bruto > 0) {
-      <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
-        <div class="flex justify-between">
-          <span class="text-on-surface-variant">Salario bruto</span><span>{{ desglose().bruto | money }}</span>
-        </div>
-        <div class="flex justify-between text-error">
-          <span>Salud (4%)</span><span>{{ -desglose().salud | money }}</span>
-        </div>
-        <div class="flex justify-between text-error">
-          <span>Pensión (4%)</span><span>{{ -desglose().pension | money }}</span>
-        </div>
-        <div class="mt-1 flex justify-between border-t border-outline-variant pt-space-xs font-bold text-secondary">
-          <span>Salario neto</span><span>{{ desglose().neto | money }}</span>
-        </div>
+    <div class="flex flex-col gap-space-xs">
+      <span class="text-label-md text-on-surface-variant">Tipo de salario</span>
+      <div class="grid grid-cols-2 gap-space-xs" role="radiogroup">
+        @for (t of tipos; track t.valor) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="tipoSalario() === t.valor"
+            [attr.aria-label]="t.titulo + ': ' + t.detalle"
+            class="flex flex-col items-start gap-0.5 rounded-lg border p-space-sm text-left transition-all"
+            [class]="tipoSalario() === t.valor ? 'border-primary-container bg-primary-container text-white' : 'border-outline-variant bg-white'"
+            (click)="tipoSalario.set(t.valor)"
+          >
+            <span class="text-body-md font-semibold">{{ t.titulo }}</span>
+            <span class="text-body-sm" [class]="tipoSalario() === t.valor ? 'text-on-primary-container' : 'text-on-surface-variant'">{{ t.detalle }}</span>
+          </button>
+        }
       </div>
-      <span class="text-body-sm text-on-surface-variant">
-        El neto se suma como ingreso todos los meses. No incluye retención en la fuente ni fondo de solidaridad.
-      </span>
+    </div>
+
+    @if (tipoSalario() === 'Fijo') {
+      <label class="flex flex-col gap-space-xs">
+        <span class="text-label-md text-on-surface-variant">Salario mensual bruto (COP, antes de descuentos)</span>
+        <input
+          class="field font-mono"
+          name="salario"
+          type="number"
+          min="0"
+          inputmode="numeric"
+          [ngModel]="salario()"
+          (ngModelChange)="salario.set($event)"
+          placeholder="Ej. 5000000"
+        />
+      </label>
+
+      @if (desglose().bruto > 0) {
+        <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
+          <div class="flex justify-between">
+            <span class="text-on-surface-variant">Salario bruto</span><span>{{ desglose().bruto | money }}</span>
+          </div>
+          <div class="flex justify-between text-error">
+            <span>Salud (4%)</span><span>{{ -desglose().salud | money }}</span>
+          </div>
+          <div class="flex justify-between text-error">
+            <span>Pensión (4%)</span><span>{{ -desglose().pension | money }}</span>
+          </div>
+          <div class="mt-1 flex justify-between border-t border-outline-variant pt-space-xs font-bold text-secondary">
+            <span>Salario neto</span><span>{{ desglose().neto | money }}</span>
+          </div>
+        </div>
+        <span class="text-body-sm text-on-surface-variant">
+          El neto se suma como ingreso todos los meses. No incluye retención en la fuente ni fondo de solidaridad.
+        </span>
+      }
+    } @else {
+      <div class="flex items-start gap-space-sm rounded-lg bg-surface-container-low p-space-sm">
+        <span class="material-symbols-outlined text-[18px] text-on-surface-variant">event_repeat</span>
+        <span class="text-body-sm text-on-surface-variant">
+          Cada mes registras cuánto ganaste (en Ingresos o desde el aviso en Inicio). La app descuenta salud y pensión, y la prima se calcula con el
+          promedio de tu salario en el semestre.
+        </span>
+      </div>
     }
 
-    @if (primaSugerida() > 0) {
+    <label class="flex flex-col gap-space-xs">
+      <span class="text-label-md text-on-surface-variant">Fecha de ingreso a la empresa (opcional)</span>
+      <input class="field" name="fechaIngreso" type="date" [ngModel]="fechaIngreso()" (ngModelChange)="fechaIngreso.set($event)" />
+      <span class="text-body-sm text-on-surface-variant">Si entraste a mitad de semestre, la prima se calcula solo por los días trabajados.</span>
+    </label>
+
+    @if (proximaPrima(); as p) {
       <div class="flex items-start gap-space-sm rounded-lg bg-primary-fixed/40 p-space-sm">
         <span class="material-symbols-outlined text-[18px] text-on-primary-fixed-variant">redeem</span>
         <span class="text-body-sm text-on-primary-fixed-variant">
-          Prima de servicios sugerida: <b class="font-mono">{{ primaSugerida() | money }}</b> en junio y otra en diciembre (salario bruto ÷ 2, sin descuentos). Te la recordaremos esos meses.
+          Próxima prima ({{ p.mes }}): <b class="font-mono">{{ p.monto | money }}</b>
+          · {{ p.completa ? 'semestre completo (salario bruto ÷ 2)' : p.dias + ' de 180 días trabajados' }}, sin descuentos. Te la recordaremos ese mes.
         </span>
       </div>
     }

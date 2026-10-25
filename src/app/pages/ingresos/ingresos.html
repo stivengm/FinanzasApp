@@ -46,7 +46,9 @@
   <section class="flex flex-col gap-space-sm">
     <div class="flex items-center justify-between px-space-xs">
       <h2 class="text-headline-sm">Salario</h2>
-      <span class="rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container uppercase">Todos los meses</span>
+      <span class="rounded-full bg-secondary-container/40 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container uppercase">
+        {{ store.esVariable() ? 'Variable · mes a mes' : 'Fijo · todos los meses' }}
+      </span>
     </div>
     <div class="card flex flex-col gap-space-sm p-space-md">
       <div class="flex items-center justify-between gap-space-sm">
@@ -56,23 +58,35 @@
           </div>
           <div class="flex min-w-0 flex-col">
             <span class="text-body-lg font-semibold">Salario neto</span>
-            <span class="text-body-sm text-on-surface-variant">Se suma automáticamente cada mes</span>
+            <span class="text-body-sm text-on-surface-variant">
+              {{ store.esVariable() ? 'Registrado para ' + mesNombre().toLowerCase() : 'Se suma automáticamente cada mes' }}
+            </span>
           </div>
         </div>
-        <span class="flex-shrink-0 font-mono text-numeric-table font-bold" [class]="store.salario() ? 'text-secondary' : 'text-outline'">
-          {{ store.salario() ? (store.salarioDesglose().neto | money: true) : 'Sin configurar' }}
+        <span class="flex-shrink-0 font-mono text-numeric-table font-bold" [class]="store.salarioDesglose().bruto ? 'text-secondary' : 'text-outline'">
+          {{ store.salarioDesglose().bruto ? (store.salarioDesglose().neto | money: true) : (store.esVariable() ? 'Sin registrar' : 'Sin configurar') }}
         </span>
       </div>
-      @if (store.salario()) {
+      @if (store.salarioDesglose().bruto) {
         <div class="grid grid-cols-3 gap-space-xs rounded-lg bg-surface-container-low px-space-sm py-space-xs font-mono text-label-micro">
           <span class="flex flex-col text-on-surface-variant">Bruto<b>{{ store.salarioDesglose().bruto | money }}</b></span>
           <span class="flex flex-col text-center text-error">Salud 4%<b>−{{ store.salarioDesglose().salud | money }}</b></span>
           <span class="flex flex-col text-right text-error">Pensión 4%<b>−{{ store.salarioDesglose().pension | money }}</b></span>
         </div>
       }
-      <a routerLink="/perfil" class="flex items-center justify-end gap-1 text-label-md font-semibold text-secondary">
-        <span class="material-symbols-outlined text-[16px]">edit</span> {{ store.salario() ? 'Cambiar salario' : 'Configurar salario' }}
-      </a>
+      @if (store.esVariable()) {
+        @for (s of salariosVariables(); track s.row) {
+          <span class="text-right font-mono text-label-micro text-outline">{{ tabs.ingresos }} · Fila #{{ s.row }}</span>
+        }
+        <button type="button" class="flex items-center justify-end gap-1 text-label-md font-semibold text-secondary" (click)="ui.openSalario(store.month())">
+          <span class="material-symbols-outlined text-[16px]">add_circle</span>
+          {{ store.salarioDesglose().bruto ? 'Agregar otro pago de salario' : 'Registrar salario de ' + mesNombre().toLowerCase() }}
+        </button>
+      } @else {
+        <a routerLink="/perfil" class="flex items-center justify-end gap-1 text-label-md font-semibold text-secondary">
+          <span class="material-symbols-outlined text-[16px]">edit</span> {{ store.salario() ? 'Cambiar salario' : 'Configurar salario' }}
+        </a>
+      }
     </div>
   </section>
 
@@ -87,11 +101,13 @@
       } @else {
         <div class="flex flex-wrap items-end justify-between gap-space-sm">
           <div class="flex flex-col">
-            <span class="text-body-sm text-on-primary-container">Sugerido (salario bruto ÷ 2, sin descuentos)</span>
+            <span class="text-body-sm text-on-primary-container">
+              {{ prima.completa ? 'Semestre completo (salario bruto ÷ 2)' : prima.dias + ' de 180 días trabajados' }} · sin descuentos
+            </span>
             <span class="font-display text-headline-lg font-bold">{{ prima.monto | money }}</span>
           </div>
           <button type="button" class="pill-btn bg-secondary-fixed-dim text-on-secondary-fixed" (click)="ui.openPrima(prima)">
-            <span class="material-symbols-outlined text-[18px]">add_circle</span> Registrar prima
+            <span class="material-symbols-outlined text-[18px]">calculate</span> Calcular y registrar
           </button>
         </div>
       }
@@ -101,6 +117,7 @@
       <span class="material-symbols-outlined text-on-surface-variant">redeem</span>
       <span class="text-body-sm text-on-surface-variant">
         Próxima prima: <b>{{ proxima.mes }}</b> · sugerido <b class="font-mono">{{ proxima.monto | money }}</b>
+        {{ proxima.completa ? '' : '(' + proxima.dias + ' de 180 días)' }}
       </span>
     </div>
   }

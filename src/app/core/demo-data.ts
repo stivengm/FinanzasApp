@@ -13,7 +13,7 @@ function table(headers: string[], rows: Cell[][]): SheetTable {
 
 const today = new Date().getDate();
 
-export const DEMO_PERFIL: Perfil = { usuario: 'demo', nombre: 'Carlos', salario: 4200000 };
+export const DEMO_PERFIL: Perfil = { usuario: 'demo', nombre: 'Carlos', salario: 4200000, tipoSalario: 'Fijo', fechaIngreso: '' };
 
 /** Datos de ejemplo anclados al mes actual (el salario vive en el perfil). */
 export function demoTables(): Record<TabKey, SheetTable> {

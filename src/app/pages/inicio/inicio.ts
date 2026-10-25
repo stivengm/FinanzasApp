@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { daysUntil, relativeDay, sameMonth } from '../../core/dates';
+import { daysUntil, monthName, relativeDay, sameMonth } from '../../core/dates';
 import { FinanceStore } from '../../core/finance.store';
 import { SessionService } from '../../core/session.service';
 import { UiService, timeAgo } from '../../core/ui.service';
@@ -22,6 +22,7 @@ export class Inicio {
   protected readonly nombre = computed(() => this.store.perfil()?.nombre || '');
   protected readonly syncAgo = computed(() => timeAgo(this.store.lastSync(), this.ui.now()));
   protected readonly s = this.store.summary;
+  protected readonly mesNombre = computed(() => monthName(this.store.month()).toLowerCase());
 
   /** % del ingreso que queda libre: alimenta la tarjeta de "hábito". */
   protected readonly habito = computed(() => {

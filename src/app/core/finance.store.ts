@@ -4,7 +4,7 @@ import { ApiService, SesionExpiradaError, WriteValues } from './api.service';
 import { addMonths, endOfMonth, monthsBetween, sameMonth, startOfMonth, toIsoDate } from './dates';
 import { DEMO_PERFIL, demoTables } from './demo-data';
 import { Fijo, FijoMes, Gasto, Ingreso, MetaAhorro, Movimiento, Pago, Perfil, SheetTable, TAB_LABELS, TabKey } from './models';
-import { desgloseSalario } from './nomina';
+import { DIAS_SEMESTRE, calcularPrima, desgloseSalario, semestreDe } from './nomina';
 import { mapRows, normalize, toDate, toNumber, toText } from './parse';
 import { SessionService } from './session.service';
 
@@ -22,8 +22,17 @@ export interface MonthSummary {
 
 export interface PrimaSugerida {
   mes: 'junio' | 'diciembre';
-  monto: number;
+  /** Fecha máxima de pago: 30 de junio o 20 de diciembre. */
   limite: Date;
+  semestre: { inicio: Date; fin: Date };
+  /** Período sugerido: desde la fecha de ingreso si cae dentro del semestre. */
+  desde: Date;
+  hasta: Date;
+  /** Salario base: el fijo, o el promedio del semestre si es variable. */
+  base: number;
+  dias: number;
+  monto: number;
+  completa: boolean;
   registrada: boolean;
 }
 
@@ -40,17 +49,33 @@ export function esPrima(i: Pick<Ingreso, 'tipo' | 'fuente'>): boolean {
   return normalize(`${i.tipo} ${i.fuente}`).includes('prima');
 }
 
+/** Filas de Ingresos con Tipo = Salario (salario variable registrado mes a mes, en bruto). */
+export function esSalario(i: Pick<Ingreso, 'tipo'>): boolean {
+  return normalize(i.tipo) === 'salario';
+}
+
 /**
- * Prima de servicios (Colombia): medio salario bruto en junio (hasta el 30) y otro en diciembre
- * (hasta el 20). No tiene descuentos de salud ni pensión.
+ * Prima de servicios (Colombia): se paga en junio (hasta el 30) y diciembre (hasta el 20) y vale
+ * salario base × días trabajados del semestre ÷ 360 (semestre completo = medio salario).
+ * No tiene descuentos de salud ni pensión.
  */
-export function primaPara(month: Date, salario: number): Omit<PrimaSugerida, 'registrada'> | null {
+export function primaPara(month: Date, base: number, fechaIngreso: Date | null = null): Omit<PrimaSugerida, 'registrada'> | null {
   const m = month.getMonth();
-  if ((m !== 5 && m !== 11) || salario <= 0) return null;
+  if ((m !== 5 && m !== 11) || base <= 0) return null;
+  const semestre = semestreDe(month);
+  if (fechaIngreso && fechaIngreso > semestre.fin) return null;
+  const desde = fechaIngreso && fechaIngreso > semestre.inicio ? fechaIngreso : semestre.inicio;
+  const { dias, monto } = calcularPrima(base, desde, semestre.fin);
   return {
     mes: m === 5 ? 'junio' : 'diciembre',
-    monto: Math.round(salario / 2),
     limite: new Date(month.getFullYear(), m, m === 5 ? 30 : 20),
+    semestre,
+    desde,
+    hasta: semestre.fin,
+    base,
+    dias,
+    monto,
+    completa: dias >= DIAS_SEMESTRE,
   };
 }
 
@@ -69,11 +94,17 @@ export class FinanceStore {
   readonly lastSync = signal<Date | null>(null);
   readonly month = signal(startOfMonth(new Date()));
 
-  /** Salario bruto del perfil: base de la prima. */
+  /** Salario bruto fijo del perfil (base de la prima si el salario es fijo). */
   readonly salario = computed(() => this.perfil()?.salario ?? 0);
-  /** Bruto − 4% salud − 4% pensión: lo que realmente entra cada mes. */
-  readonly salarioDesglose = computed(() => desgloseSalario(this.salario()));
+  readonly esVariable = computed(() => this.perfil()?.tipoSalario === 'Variable');
+  readonly fechaIngreso = computed(() => toDate(this.perfil()?.fechaIngreso || null));
   readonly ingresos = computed(() => this.mapIngresos(this.tables().ingresos));
+  /** Desglose del salario del mes seleccionado: bruto − 4% salud − 4% pensión. */
+  readonly salarioDesglose = computed(() => desgloseSalario(this.salarioBrutoDe(this.month())));
+  /** Salario variable sin registrar en el mes seleccionado. */
+  readonly salarioPendiente = computed(() => this.esVariable() && !this.salarioBrutoDe(this.month()));
+  /** Hay con qué calcular ingresos: salario fijo configurado o salario variable elegido. */
+  readonly salarioConfigurado = computed(() => this.esVariable() || this.salario() > 0);
   readonly metas = computed(() => this.mapMetas(this.tables().ahorro));
   readonly fijos = computed(() => this.mapFijos(this.tables().fijos));
   readonly pagos = computed(() => this.mapPagos(this.tables().pagos));
@@ -91,7 +122,7 @@ export class FinanceStore {
 
   /** Prima sugerida si el mes seleccionado es junio o diciembre. */
   readonly prima = computed<PrimaSugerida | null>(() => {
-    const base = primaPara(this.month(), this.salario());
+    const base = primaPara(this.month(), this.primaBase(this.month()), this.fechaIngreso());
     if (!base) return null;
     const registrada = this.ingresos().some((i) => sameMonth(i.fecha, this.month()) && esPrima(i));
     return { ...base, registrada };
@@ -101,7 +132,7 @@ export class FinanceStore {
   readonly proximaPrima = computed(() => {
     for (let i = 0; i < 12; i++) {
       const month = addMonths(this.month(), i);
-      const prima = primaPara(month, this.salario());
+      const prima = primaPara(month, this.primaBase(month), this.fechaIngreso());
       if (prima) return prima;
     }
     return null;
@@ -138,7 +169,7 @@ export class FinanceStore {
         titulo: i.fuente,
         fecha: i.fecha,
         etiqueta: i.tipo || 'Ingreso',
-        monto: i.monto,
+        monto: esSalario(i) ? desgloseSalario(i.monto).neto : i.monto,
         fila: i.row,
         pestana: TAB_LABELS.ingresos,
       })),
@@ -199,7 +230,7 @@ export class FinanceStore {
 
   // ---------- Escritura ----------
 
-  async updatePerfil(values: Partial<Pick<Perfil, 'nombre' | 'salario'>>): Promise<void> {
+  async updatePerfil(values: Partial<Omit<Perfil, 'usuario'>>): Promise<void> {
     const sesion = this.session.sesion();
     const actual = this.perfil();
     if (!sesion || !actual) return;
@@ -233,6 +264,28 @@ export class FinanceStore {
       Descripción: i.descripcion,
       Tipo: i.tipo,
       Monto: i.monto,
+    });
+  }
+
+  /** Salario variable: se guarda en bruto en Ingresos con Tipo = Salario. */
+  addSalarioMes(bruto: number, fecha: Date): Promise<void> {
+    return this.write('ingresos', {
+      Fecha: toIsoDate(fecha),
+      Fuente: 'Salario',
+      Descripción: 'Salario del mes (bruto)',
+      Tipo: 'Salario',
+      Monto: bruto,
+    });
+  }
+
+  addPrima(p: { mes: string; desde: Date; hasta: Date; dias: number; monto: number; fecha: Date }): Promise<void> {
+    const f = (d: Date) => d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+    return this.write('ingresos', {
+      Fecha: toIsoDate(p.fecha),
+      Fuente: `Prima de servicios ${p.mes}`,
+      Descripción: `${p.dias} días (${f(p.desde)} – ${f(p.hasta)})`,
+      Tipo: 'Prima',
+      Monto: p.monto,
     });
   }
 
@@ -299,10 +352,42 @@ export class FinanceStore {
 
   // ---------- Cálculos por mes ----------
 
-  /** Salario neto (todos los meses) + ingresos registrados en ese mes. */
+  /** Salario bruto de un mes: el fijo del perfil, o lo registrado ese mes si es variable. */
+  salarioBrutoDe(month: Date): number {
+    if (!this.esVariable()) return this.salario();
+    return this.ingresos()
+      .filter((i) => esSalario(i) && sameMonth(i.fecha, month))
+      .reduce((s, i) => s + i.monto, 0);
+  }
+
+  /**
+   * Base de la prima: el salario fijo, o el promedio mensual del salario variable
+   * registrado en el semestre hasta ese mes.
+   */
+  primaBase(month: Date): number {
+    if (!this.esVariable()) return this.salario();
+    const { inicio } = semestreDe(month);
+    const porMes = new Map<string, number>();
+    for (const i of this.ingresos()) {
+      if (!esSalario(i) || !i.fecha || i.fecha < inicio || i.fecha > endOfMonth(month)) continue;
+      const key = `${i.fecha.getFullYear()}-${i.fecha.getMonth()}`;
+      porMes.set(key, (porMes.get(key) ?? 0) + i.monto);
+    }
+    if (!porMes.size) return 0;
+    return Math.round([...porMes.values()].reduce((a, b) => a + b, 0) / porMes.size);
+  }
+
+  /** Salario neto del mes + ingresos registrados en ese mes. */
   ingresosFor(month: Date): Ingreso[] {
-    const extras = this.ingresos().filter((i) => sameMonth(i.fecha, month));
-    const neto = this.salarioDesglose().neto;
+    const delMes = this.ingresos().filter((i) => sameMonth(i.fecha, month));
+    if (this.esVariable()) {
+      // El salario variable se registra en bruto; como ingreso cuenta el neto.
+      return delMes.map((i) =>
+        esSalario(i) ? { ...i, monto: desgloseSalario(i.monto).neto, descripcion: 'Salario neto (bruto − 8%)' } : i,
+      );
+    }
+    const extras = delMes.filter((i) => !esSalario(i));
+    const neto = desgloseSalario(this.salario()).neto;
     if (!neto) return extras;
     const fijo: Ingreso = { row: 0, fecha: startOfMonth(month), fuente: 'Salario', descripcion: 'Salario neto (bruto − 8%)', tipo: 'Salario', monto: neto };
     return [fijo, ...extras];

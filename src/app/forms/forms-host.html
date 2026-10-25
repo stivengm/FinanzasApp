@@ -130,6 +130,80 @@
           <ng-container *ngTemplateOutlet="actions" />
         </form>
       }
+      @case ('salario') {
+        <form [formGroup]="salario" (ngSubmit)="submit('salario')" class="flex flex-col gap-space-md">
+          <p class="text-body-sm text-on-surface-variant">Tu salario es variable: registra lo que ganaste este mes, antes de descuentos.</p>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Salario bruto (COP)</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Fecha</span>
+              <input class="field" type="date" formControlName="fecha" />
+            </label>
+          </div>
+          @if (salarioDesglose().bruto > 0) {
+            <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
+              <div class="flex justify-between text-error"><span>Salud (4%)</span><span>-{{ salarioDesglose().salud | money }}</span></div>
+              <div class="flex justify-between text-error"><span>Pensión (4%)</span><span>-{{ salarioDesglose().pension | money }}</span></div>
+              <div class="mt-1 flex justify-between border-t border-outline-variant pt-space-xs font-bold text-secondary">
+                <span>Salario neto</span><span>{{ salarioDesglose().neto | money }}</span>
+              </div>
+            </div>
+          }
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
+      @case ('prima') {
+        <form [formGroup]="prima" (ngSubmit)="submit('prima')" class="flex flex-col gap-space-md">
+          <div class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">¿Trabajaste el semestre completo?</span>
+            <div class="grid grid-cols-2 gap-1 rounded-xl bg-surface-container-low p-1" role="radiogroup">
+              @for (op of [{ v: 'si', t: 'Sí, completo' }, { v: 'no', t: 'No, una parte' }]; track op.v) {
+                <label
+                  class="flex h-9 cursor-pointer items-center justify-center rounded-lg text-body-md transition-all"
+                  [class]="prima.controls.completa.value === op.v ? 'bg-primary font-semibold text-on-primary shadow-sm' : 'text-on-surface-variant'"
+                >
+                  <input type="radio" class="sr-only" formControlName="completa" [value]="op.v" [attr.aria-label]="op.t" />{{ op.t }}
+                </label>
+              }
+            </div>
+          </div>
+          @if (prima.controls.completa.value === 'no') {
+            <div class="grid grid-cols-2 gap-space-sm">
+              <label class="flex flex-col gap-space-xs">
+                <span class="text-label-md text-on-surface-variant">Desde</span>
+                <input class="field" type="date" formControlName="desde" [min]="prima.controls.inicioSemestre.value" [max]="prima.controls.finSemestre.value" />
+              </label>
+              <label class="flex flex-col gap-space-xs">
+                <span class="text-label-md text-on-surface-variant">Hasta</span>
+                <input class="field" type="date" formControlName="hasta" [min]="prima.controls.inicioSemestre.value" [max]="prima.controls.finSemestre.value" />
+              </label>
+            </div>
+          }
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Salario base (bruto)</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="base" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Fecha de pago</span>
+              <input class="field" type="date" formControlName="fecha" />
+            </label>
+          </div>
+          <div class="flex flex-col gap-1 rounded-lg bg-primary-container p-space-md text-white">
+            <span class="font-mono text-label-micro tracking-wider text-on-primary-container uppercase">
+              Días trabajados: {{ primaCalculo().dias }} de {{ diasSemestre }}
+            </span>
+            <span class="font-display text-headline-lg font-bold">{{ primaCalculo().monto | money }}</span>
+            <span class="font-mono text-label-micro text-on-primary-container">
+              {{ (prima.controls.base.value ?? 0) | money }} × {{ primaCalculo().dias }} días ÷ 360 · sin descuentos de salud ni pensión
+            </span>
+          </div>
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
     }
   </app-bottom-sheet>
 }

@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { monthName } from '../../core/dates';
-import { FinanceStore, esPrima } from '../../core/finance.store';
+import { monthName, sameMonth } from '../../core/dates';
+import { FinanceStore, esPrima, esSalario } from '../../core/finance.store';
 import { TAB_LABELS } from '../../core/models';
 import { UiService } from '../../core/ui.service';
 import { MoneyPipe, iconFor } from '../../shared/format';
@@ -29,7 +29,7 @@ export class Ingresos {
   protected readonly extras = computed(() =>
     this.store
       .ingresosMes()
-      .filter((i) => i.row > 0)
+      .filter((i) => i.row > 0 && !esSalario(i))
       .map((i) => ({
         ...i,
         prima: esPrima(i),
@@ -48,6 +48,11 @@ export class Ingresos {
       extras: (extras / total) * 100,
     };
   });
+
+  /** Filas de salario variable del mes (en bruto). */
+  protected readonly salariosVariables = computed(() =>
+    this.store.ingresos().filter((i) => esSalario(i) && sameMonth(i.fecha, this.store.month())),
+  );
 
   protected readonly ahorro = computed(() => {
     const programado = this.store.metas().reduce((s, m) => s + m.aporteMensual, 0);

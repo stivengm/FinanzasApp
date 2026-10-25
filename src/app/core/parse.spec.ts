@@ -1,5 +1,5 @@
 import { primaPara } from './finance.store';
-import { desgloseSalario } from './nomina';
+import { calcularPrima, desgloseSalario, dias360 } from './nomina';
 import { mapRows, toDate, toNumber } from './parse';
 
 describe('parse', () => {
@@ -30,9 +30,25 @@ describe('parse', () => {
     expect(rows).toEqual([{ row: 2, monto: 50000, desc: 'Taxi' }]);
   });
 
-  it('sugiere la prima de servicios (salario ÷ 2) solo en junio y diciembre', () => {
-    expect(primaPara(new Date(2026, 5, 1), 5000000)).toEqual({ mes: 'junio', monto: 2500000, limite: new Date(2026, 5, 30) });
-    expect(primaPara(new Date(2026, 11, 1), 5000000)?.limite).toEqual(new Date(2026, 11, 20));
+  it('cuenta días con meses comerciales de 30 días', () => {
+    expect(dias360(new Date(2026, 6, 1), new Date(2026, 11, 31))).toBe(180);
+    expect(dias360(new Date(2026, 0, 1), new Date(2026, 5, 30))).toBe(180);
+    expect(dias360(new Date(2026, 8, 18), new Date(2026, 11, 31))).toBe(103);
+    expect(dias360(new Date(2026, 1, 1), new Date(2026, 1, 28))).toBe(30);
+    expect(dias360(new Date(2026, 11, 31), new Date(2026, 6, 1))).toBe(0);
+  });
+
+  it('calcula la prima completa o proporcional a los días trabajados', () => {
+    expect(calcularPrima(5000000, new Date(2026, 6, 1), new Date(2026, 11, 31))).toEqual({ dias: 180, monto: 2500000 });
+    expect(calcularPrima(5000000, new Date(2026, 8, 18), new Date(2026, 11, 31))).toEqual({ dias: 103, monto: 1430556 });
+  });
+
+  it('sugiere la prima solo en junio y diciembre, desde la fecha de ingreso', () => {
+    const completa = primaPara(new Date(2026, 5, 1), 5000000);
+    expect(completa).toMatchObject({ mes: 'junio', monto: 2500000, dias: 180, completa: true, limite: new Date(2026, 5, 30) });
+    const parcial = primaPara(new Date(2026, 11, 1), 5000000, new Date(2026, 8, 18));
+    expect(parcial).toMatchObject({ mes: 'diciembre', dias: 103, monto: 1430556, completa: false, limite: new Date(2026, 11, 20) });
+    expect(primaPara(new Date(2026, 5, 1), 5000000, new Date(2026, 8, 18))).toBeNull();
     expect(primaPara(new Date(2026, 9, 1), 5000000)).toBeNull();
     expect(primaPara(new Date(2026, 5, 1), 0)).toBeNull();
   });

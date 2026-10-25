@@ -47,7 +47,7 @@ export class ApiService {
     return this.call('append', { ...cred, sheet, values: normalized });
   }
 
-  profile(cred: Credenciales, values: Partial<Pick<Perfil, 'nombre' | 'salario'>>): Promise<{ perfil: Perfil }> {
+  profile(cred: Credenciales, values: Partial<Omit<Perfil, 'usuario'>>): Promise<{ perfil: Perfil }> {
     return this.call('profile', { ...cred, values });
   }
 

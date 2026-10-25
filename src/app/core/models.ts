@@ -62,11 +62,17 @@ export const TAB_LABELS: Record<TabKey, string> = {
   gastos: 'Gastos',
 };
 
+export type TipoSalario = 'Fijo' | 'Variable';
+
 export interface Perfil {
   usuario: string;
   nombre: string;
-  /** Ingreso fijo que se repite todos los meses. */
+  /** Salario bruto mensual (solo aplica al salario fijo). */
   salario: number;
+  /** Fijo: el mismo cada mes. Variable: se registra cada mes en Ingresos (Tipo = Salario). */
+  tipoSalario: TipoSalario;
+  /** Fecha de ingreso a la empresa (yyyy-mm-dd) para la prima proporcional. */
+  fechaIngreso: string;
 }
 
 export interface Sesion {

@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
-import { sameMonth, toIsoDate } from './dates';
+import { endOfMonth, sameMonth, toIsoDate } from './dates';
 import type { PrimaSugerida } from './finance.store';
 
-export type FormKind = 'gasto' | 'ingreso' | 'fijo' | 'meta';
+export type FormKind = 'gasto' | 'ingreso' | 'fijo' | 'meta' | 'salario' | 'prima';
 
 @Injectable({ providedIn: 'root' })
 export class UiService {
@@ -24,17 +24,26 @@ export class UiService {
     this.form.set(kind);
   }
 
-  /** Abre el formulario de ingreso con la prima sugerida ya diligenciada. */
+  /** Abre el cálculo de la prima con el período y la base sugeridos. */
   openPrima(prima: PrimaSugerida): void {
     const hoy = new Date();
     const fecha = hoy < prima.limite && sameMonth(hoy, prima.limite) ? hoy : prima.limite;
-    this.open('ingreso', {
-      fuente: `Prima de servicios ${prima.mes}`,
-      descripcion: 'Prima legal (salario bruto ÷ 2)',
-      tipo: 'Prima',
-      monto: prima.monto,
+    this.open('prima', {
+      completa: prima.completa ? 'si' : 'no',
+      desde: toIsoDate(prima.desde),
+      hasta: toIsoDate(prima.hasta),
+      base: prima.base,
       fecha: toIsoDate(fecha),
+      mes: prima.mes,
+      inicioSemestre: toIsoDate(prima.semestre.inicio),
+      finSemestre: toIsoDate(prima.semestre.fin),
     });
+  }
+
+  /** Abre el registro del salario variable de un mes. */
+  openSalario(month: Date): void {
+    const hoy = new Date();
+    this.open('salario', { fecha: toIsoDate(sameMonth(hoy, month) ? hoy : endOfMonth(month)), monto: null });
   }
 
   notify(text: string, error = false): void {

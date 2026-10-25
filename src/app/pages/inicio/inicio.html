@@ -103,7 +103,7 @@
   </div>
 
   <!-- Configurar salario -->
-  @if (!store.loading() && store.perfil() && !store.salario()) {
+  @if (!store.loading() && store.perfil() && !store.salarioConfigurado()) {
     <a routerLink="/perfil" class="flex items-center gap-space-md rounded-xl border border-dashed border-secondary/40 bg-[#ECFDF5] p-space-md">
       <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-secondary-container/60 text-secondary">
         <span class="material-symbols-outlined">payments</span>
@@ -116,6 +116,24 @@
     </a>
   }
 
+  <!-- Salario variable del mes -->
+  @if (!store.loading() && store.salarioPendiente()) {
+    <button
+      type="button"
+      class="flex items-center gap-space-md rounded-xl border border-dashed border-secondary/40 bg-[#ECFDF5] p-space-md text-left"
+      (click)="ui.openSalario(store.month())"
+    >
+      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-secondary-container/60 text-secondary">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <span class="font-display text-headline-sm">Registra tu salario de {{ mesNombre() }}</span>
+        <span class="text-body-sm text-on-surface-variant">Tu salario es variable: dinos cuánto ganaste este mes.</span>
+      </div>
+      <span class="material-symbols-outlined text-secondary">add_circle</span>
+    </button>
+  }
+
   <!-- Prima de servicios -->
   @if (store.prima(); as prima) {
     @if (!prima.registrada) {
@@ -125,12 +143,14 @@
         </div>
         <div class="flex flex-wrap items-end justify-between gap-space-sm">
           <div class="flex flex-col">
-            <span class="text-body-sm text-on-primary-container">Monto sugerido (salario bruto ÷ 2)</span>
+            <span class="text-body-sm text-on-primary-container">
+              {{ prima.completa ? 'Semestre completo (salario bruto ÷ 2)' : prima.dias + ' de 180 días trabajados' }}
+            </span>
             <span class="font-display text-headline-lg font-bold">{{ prima.monto | money }}</span>
             <span class="font-mono text-label-micro text-on-primary-container">Se paga a más tardar el {{ prima.limite.getDate() }} de {{ prima.mes }}</span>
           </div>
           <button type="button" class="pill-btn bg-secondary-fixed-dim text-on-secondary-fixed" (click)="ui.openPrima(prima)">
-            <span class="material-symbols-outlined text-[18px]">add_circle</span> Registrar prima
+            <span class="material-symbols-outlined text-[18px]">calculate</span> Calcular y registrar
           </button>
         </div>
       </div>
