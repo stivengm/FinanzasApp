@@ -35,6 +35,11 @@ export class Deudas {
     return e.deuda.monto ? Math.min(100, Math.round((e.capitalPagado / e.deuda.monto) * 100)) : 0;
   }
 
+  /** % del cupo de la tarjeta que está usado. */
+  protected usoCupo(e: EstadoDeuda): number {
+    return e.deuda.cupo ? Math.min(100, Math.round((e.saldo / e.deuda.cupo) * 100)) : 0;
+  }
+
   protected tasa(e: EstadoDeuda): string {
     const t = e.deuda.tasaMensual;
     return t > 0 ? `${t.toLocaleString('es-CO', { maximumFractionDigits: 2 })}% mensual` : 'Sin interés';
@@ -46,8 +51,8 @@ export class Deudas {
 
   /** Con una sola deuda activa la preselecciona; con varias, deja elegir. */
   protected registrarPago(): void {
-    const activas = this.store.estadosDeuda().filter((e) => !e.pagada);
-    if (activas.length === 1) return this.ui.openAbono(activas[0].deuda);
+    const activas = this.store.estadosDeuda().filter((e) => !e.pagada && e.saldo > 0);
+    if (activas.length === 1) return this.ui.openAbono(activas[0].deuda, activas[0].porPagarMes || activas[0].saldo);
     this.ui.open('abono', { deudaId: '', tipo: 'Cuota', monto: null, fecha: toIsoDate(new Date()), nota: '' });
   }
 

@@ -38,9 +38,16 @@ export class Inicio {
 
   protected readonly vencimientos = computed(() => {
     const esActual = sameMonth(new Date(), this.store.month());
-    return this.store
+    const fijos = this.store
       .fijosMes()
       .filter((f) => f.aplica && !f.pago)
+      .map((f) => ({ clave: `f-${f.fijo.row}`, nombre: f.fijo.servicio, detalle: f.fijo.proveedor, icono: iconFor(f.fijo.servicio, f.fijo.categoria), monto: f.fijo.monto, vence: f.vence }));
+    // Los pagos pendientes de tarjetas también son vencimientos del mes.
+    const tarjetas = this.store
+      .pagosTarjetaMes()
+      .filter((p) => p.pendiente)
+      .map((p) => ({ clave: `t-${p.estado.deuda.id}`, nombre: `Pago ${p.estado.deuda.nombre}`, detalle: 'Tarjeta de crédito', icono: 'credit_card', monto: p.porPagar, vence: p.vence }));
+    return [...fijos, ...tarjetas]
       .sort((a, b) => a.vence.getTime() - b.vence.getTime())
       .slice(0, 3)
       .map((f) => {

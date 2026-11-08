@@ -31,6 +31,19 @@
               </select>
             </label>
           </div>
+          @if (gastoTarjeta(); as modo) {
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">{{ modo === 'pago' ? '¿Qué tarjeta pagas?' : '¿Con qué tarjeta?' }}</span>
+              <select class="field" formControlName="tarjeta">
+                @for (t of store.tarjetas(); track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }
+              </select>
+              <span class="text-body-sm text-on-surface-variant">
+                {{ modo === 'pago' ? 'Se registra como pago de la tarjeta en Deudas (no como un gasto nuevo).' : 'La compra se suma a la deuda de la tarjeta.' }}
+              </span>
+            </label>
+          } @else if (gasto.controls.categoria.value === 'Pago Tarjetas' || gasto.controls.metodoPago.value === 'Tarjeta de Crédito') {
+            <p class="text-body-sm text-on-surface-variant">Registra tu tarjeta en Deudas para conectar sus compras y pagos.</p>
+          }
           <label class="flex flex-col gap-space-xs">
             <span class="text-label-md text-on-surface-variant">Detalle (opcional)</span>
             <input class="field" formControlName="detalle" placeholder="Lugar, nota…" />
@@ -100,6 +113,15 @@
             <span class="text-label-md text-on-surface-variant">Proveedor (opcional)</span>
             <input class="field" formControlName="proveedor" placeholder="Empresa que factura" />
           </label>
+          @if (store.tarjetas().length) {
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">¿Se cobra a una tarjeta de crédito?</span>
+              <select class="field" formControlName="tarjeta">
+                <option value="">No, lo pago directo</option>
+                @for (t of store.tarjetas(); track t.id) { <option [value]="t.id">Sí, a {{ t.nombre }}</option> }
+              </select>
+            </label>
+          }
           <ng-container *ngTemplateOutlet="actions" />
         </form>
       }
@@ -206,14 +228,38 @@
       }
       @case ('deuda') {
         <form [formGroup]="deuda" (ngSubmit)="submit('deuda')" class="flex flex-col gap-space-md">
+          <div class="grid grid-cols-2 gap-space-xs" role="radiogroup">
+            @for (t of [{ v: 'Préstamo', t: 'Préstamo o persona', i: 'handshake' }, { v: 'Tarjeta', t: 'Tarjeta de crédito', i: 'credit_card' }]; track t.v) {
+              <label
+                class="flex cursor-pointer items-center justify-center gap-space-xs rounded-lg border p-space-sm text-body-md transition-all"
+                [class]="deuda.controls.tipoDeuda.value === t.v ? 'border-primary-container bg-primary-container font-semibold text-white' : 'border-outline-variant'"
+              >
+                <input type="radio" class="sr-only" formControlName="tipoDeuda" [value]="t.v" [attr.aria-label]="t.t" />
+                <span class="material-symbols-outlined text-[18px]">{{ t.i }}</span>{{ t.t }}
+              </label>
+            }
+          </div>
+          @let esTarjeta = deuda.controls.tipoDeuda.value === 'Tarjeta';
           <label class="flex flex-col gap-space-xs">
-            <span class="text-label-md text-on-surface-variant">¿Qué debes?</span>
-            <input class="field" formControlName="nombre" placeholder="Ej. Crédito libre inversión, préstamo de mamá" />
+            <span class="text-label-md text-on-surface-variant">{{ esTarjeta ? 'Nombre de la tarjeta' : '¿Qué debes?' }}</span>
+            <input class="field" formControlName="nombre" [placeholder]="esTarjeta ? 'Ej. Visa Bancolombia' : 'Ej. Crédito libre inversión, préstamo de mamá'" />
           </label>
+          @if (esTarjeta) {
+            <div class="grid grid-cols-2 gap-space-sm">
+              <label class="flex flex-col gap-space-xs">
+                <span class="text-label-md text-on-surface-variant">Cupo total</span>
+                <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="cupo" placeholder="8000000" />
+              </label>
+              <label class="flex flex-col gap-space-xs">
+                <span class="text-label-md text-on-surface-variant">Día de pago</span>
+                <input class="field" type="number" min="1" max="31" formControlName="diaPago" placeholder="15" />
+              </label>
+            </div>
+          }
           <div class="grid grid-cols-2 gap-space-sm">
             <label class="flex flex-col gap-space-xs">
-              <span class="text-label-md text-on-surface-variant">Monto de la deuda</span>
-              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" placeholder="5000000" />
+              <span class="text-label-md text-on-surface-variant">{{ esTarjeta ? 'Lo que debes hoy' : 'Monto de la deuda' }}</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" [placeholder]="esTarjeta ? '0' : '5000000'" />
             </label>
             <label class="flex flex-col gap-space-xs">
               <span class="text-label-md text-on-surface-variant">Fecha</span>
@@ -221,7 +267,7 @@
             </label>
           </div>
           <label class="flex flex-col gap-space-xs">
-            <span class="text-label-md text-on-surface-variant">¿A quién le debes? (opcional)</span>
+            <span class="text-label-md text-on-surface-variant">{{ esTarjeta ? 'Banco (opcional)' : '¿A quién le debes? (opcional)' }}</span>
             <input class="field" formControlName="acreedor" placeholder="Banco, persona…" />
           </label>
 
@@ -257,10 +303,16 @@
             <p class="text-body-sm text-on-surface-variant">Sin interés: pagas lo que debes, con cuotas o abonos cuando puedas.</p>
           }
 
-          <label class="flex flex-col gap-space-xs">
-            <span class="text-label-md text-on-surface-variant">Cuota mensual pactada (opcional)</span>
-            <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="cuota" />
-          </label>
+          @if (esTarjeta) {
+            <p class="text-body-sm text-on-surface-variant">
+              Las compras que registres en Gastos o en Fijos con esta tarjeta suben su deuda, y su pago aparecerá en Fijos cada mes.
+            </p>
+          } @else {
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Cuota mensual pactada (opcional)</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="cuota" />
+            </label>
+          }
 
           @if (deuda.controls.conInteres.value === 'si' && deudaCalculo().tasaMensual > 0) {
             <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
@@ -289,8 +341,8 @@
           </label>
           <div class="flex flex-col gap-space-xs">
             <span class="text-label-md text-on-surface-variant">Tipo de pago</span>
-            <div class="grid grid-cols-3 gap-space-xs" role="radiogroup">
-              @for (t of tiposAbono; track t.valor) {
+            <div class="grid gap-space-xs" [class]="tiposAbono().length === 2 ? 'grid-cols-2' : 'grid-cols-3'" role="radiogroup">
+              @for (t of tiposAbono(); track t.valor) {
                 <label
                   class="flex cursor-pointer flex-col items-center justify-center rounded-lg border p-space-xs text-center text-body-sm transition-all"
                   [class]="abono.controls.tipo.value === t.valor ? 'border-primary-container bg-primary-container font-semibold text-white' : 'border-outline-variant'"

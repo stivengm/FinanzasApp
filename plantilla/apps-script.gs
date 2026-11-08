@@ -11,10 +11,10 @@ const HOJAS = {
   usuarios: { nombre: 'Usuarios', columnas: ['Usuario', 'Clave', 'Nombre', 'Salario', 'Token', 'Registrado', 'Tipo Salario', 'Fecha Ingreso'] },
   ingresos: { nombre: 'Ingresos', columnas: ['Usuario', 'Fecha', 'Fuente', 'Descripción', 'Tipo', 'Monto'] },
   ahorro: { nombre: 'Ahorro', columnas: ['Usuario', 'Objetivo', 'Descripción', 'Meta', 'Ahorrado', 'Aporte Mensual'] },
-  fijos: { nombre: 'Fijos', columnas: ['Usuario', 'Servicio', 'Proveedor', 'Categoría', 'Frecuencia', 'Día de Pago', 'Monto'] },
-  pagos: { nombre: 'Pagos', columnas: ['Usuario', 'Fecha', 'Servicio', 'Monto'] },
-  gastos: { nombre: 'Gastos', columnas: ['Usuario', 'Fecha', 'Descripción', 'Detalle', 'Categoría', 'Método de Pago', 'Monto'] },
-  deudas: { nombre: 'Deudas', columnas: ['Usuario', 'ID', 'Deuda', 'Acreedor', 'Monto', 'Fecha', 'Interés Mensual', 'Cuota Mensual'] },
+  fijos: { nombre: 'Fijos', columnas: ['Usuario', 'Servicio', 'Proveedor', 'Categoría', 'Frecuencia', 'Día de Pago', 'Monto', 'Tarjeta'] },
+  pagos: { nombre: 'Pagos', columnas: ['Usuario', 'Fecha', 'Servicio', 'Monto', 'Tarjeta'] },
+  gastos: { nombre: 'Gastos', columnas: ['Usuario', 'Fecha', 'Descripción', 'Detalle', 'Categoría', 'Método de Pago', 'Monto', 'Tarjeta'] },
+  deudas: { nombre: 'Deudas', columnas: ['Usuario', 'ID', 'Deuda', 'Acreedor', 'Monto', 'Fecha', 'Interés Mensual', 'Cuota Mensual', 'Tipo', 'Cupo', 'Día de Pago'] },
   abonos: { nombre: 'Abonos', columnas: ['Usuario', 'Fecha', 'Deuda ID', 'Deuda', 'Tipo', 'Monto', 'Nota'] },
 };
 const DATOS = ['ingresos', 'ahorro', 'fijos', 'pagos', 'gastos', 'deudas', 'abonos'];

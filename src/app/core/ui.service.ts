@@ -40,12 +40,16 @@ export class UiService {
     });
   }
 
-  /** Abre el registro de un pago a una deuda, con la cuota pactada como monto sugerido. */
-  openAbono(deuda: { id: string; cuota: number }): void {
+  /**
+   * Abre el registro de un pago a una deuda. Préstamo: sugiere la cuota pactada.
+   * Tarjeta: sugiere lo que falta pagar del mes (`porPagar`), como pago parcial o total.
+   */
+  openAbono(deuda: { id: string; cuota: number; tipo: string }, porPagar?: number): void {
+    const tarjeta = deuda.tipo === 'Tarjeta';
     this.open('abono', {
       deudaId: deuda.id,
-      tipo: deuda.cuota > 0 ? 'Cuota' : 'Abono a capital',
-      monto: deuda.cuota > 0 ? deuda.cuota : null,
+      tipo: tarjeta ? 'Pago parcial' : deuda.cuota > 0 ? 'Cuota' : 'Abono a capital',
+      monto: tarjeta ? porPagar || null : deuda.cuota > 0 ? deuda.cuota : null,
       fecha: toIsoDate(new Date()),
       nota: '',
     });

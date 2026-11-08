@@ -10,7 +10,7 @@ Aplicación web en **Angular 21** para llevar finanzas personales sobre una hoja
 | `/ingresos` | Salario mensual, prima sugerida, ingresos extra del mes, bóveda de ahorro y remanente |
 | `/fijos` | Responsabilidades fijas con estado pagado / pendiente / programado |
 | `/gastos` | Gastos variables con búsqueda, filtros por categoría y promedio diario |
-| `/deudas` | Deudas con o sin interés, cuotas, abonos a capital, pago total e historial |
+| `/deudas` | Préstamos (crédito o persona) con o sin interés y tarjetas de crédito: cuotas, abonos, pagos, compras e historial |
 | `/sheets` | Analítica (tasa de ahorro, distribución, evolución trimestral) y hub de sincronización |
 | `/ingresar` | Ingreso y registro con usuario o correo + clave (y modo demo) |
 | `/perfil` | Nombre, tipo de salario (fijo o variable), salario, fecha de ingreso y cierre de sesión |
@@ -58,11 +58,13 @@ La app no lee la hoja directamente: habla con un **Apps Script** publicado como 
 | `Usuarios` | Usuario · Clave · Nombre · **Salario** · Token · Registrado · Tipo Salario (Fijo/Variable) · Fecha Ingreso |
 | `Ingresos` | Usuario · Fecha · Fuente · Descripción · Tipo (Salario/Extra/Prima/Bonificación/Renta/Otro) · Monto |
 | `Ahorro` | Usuario · Objetivo · Descripción · Meta · Ahorrado · Aporte Mensual |
-| `Fijos` | Usuario · Servicio · Proveedor · Categoría · Frecuencia (Mensual/Bimestral/…) · Día de Pago · Monto |
-| `Pagos` | Usuario · Fecha · Servicio · Monto — un registro por cada pago de un fijo |
-| `Gastos` | Usuario · Fecha · Descripción · Detalle · Categoría · Método de Pago · Monto |
-| `Deudas` | Usuario · ID · Deuda · Acreedor · Monto · Fecha · Interés Mensual (%, 0 = sin interés) · Cuota Mensual |
-| `Abonos` | Usuario · Fecha · Deuda ID · Deuda · Tipo (Cuota/Abono a capital/Pago total) · Monto · Nota (razón) |
+| `Fijos` | Usuario · Servicio · Proveedor · Categoría · Frecuencia (Mensual/Bimestral/…) · Día de Pago · Monto · Tarjeta |
+| `Pagos` | Usuario · Fecha · Servicio · Monto · Tarjeta — un registro por cada pago de un fijo |
+| `Gastos` | Usuario · Fecha · Descripción · Detalle · Categoría · Método de Pago · Monto · Tarjeta |
+| `Deudas` | Usuario · ID · Deuda · Acreedor · Monto · Fecha · Interés Mensual (%, 0 = sin interés) · Cuota Mensual · Tipo (Préstamo/Tarjeta) · Cupo · Día de Pago |
+| `Abonos` | Usuario · Fecha · Deuda ID · Deuda · Tipo (Cuota/Abono a capital/Pago total/Pago parcial) · Monto · Nota (razón) |
+
+La columna `Tarjeta` guarda el `ID` de la tarjeta (pestaña `Deudas`); vacía = pago directo.
 
 Reglas de cálculo:
 
@@ -81,7 +83,12 @@ Reglas de cálculo:
   - Sin interés: el saldo baja exactamente lo que se paga.
   - Con interés: desde el mes siguiente al préstamo, cada mes se suma el interés sobre el saldo de inicio de mes (la tasa E.A. se convierte a mensual al crearla). Cada pago cubre primero el interés pendiente y el resto baja el capital.
   - Con cuota pactada, la app estima los meses que faltan o avisa si la cuota no cubre el interés.
-- **Balance disponible** = ingresos − (fijos + gastos variables + pagos a deudas) − aportes mensuales de ahorro.
+- **Tarjetas de crédito** (conectadas con Gastos y Fijos):
+  - Un gasto con método "Tarjeta de Crédito" o un fijo cobrado a una tarjeta suben la deuda de esa tarjeta.
+  - El pago de cada tarjeta aparece en **Fijos** (y en los vencimientos de Inicio) con su día de pago; marcarlo registra el pago en `Abonos`. En Gastos, la categoría "Pago Tarjetas" también registra el pago de la tarjeta.
+  - Interés: al cerrar cada mes se cobra solo sobre la parte del saldo del mes anterior que no se pagó (pagando el total no hay interés). El mes en curso no se cierra.
+  - Sin doble conteo: las compras cuentan como gasto cuando se hacen; de los pagos a la tarjeta solo cuentan los intereses.
+- **Balance disponible** = ingresos − (fijos + gastos variables + pagos a préstamos + intereses de tarjetas) − aportes mensuales de ahorro.
 
 ## Arquitectura
 

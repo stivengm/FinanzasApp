@@ -69,6 +69,10 @@ export class Fijos {
     return i % 2 ? TINTS[2] : TINTS[0];
   }
 
+  protected nombreTarjeta(id: string): string | null {
+    return id ? (this.store.tarjetas().find((t) => t.id === id)?.nombre ?? null) : null;
+  }
+
   protected fecha(date: Date): string {
     return `${date.getDate()} ${monthName(date, true)}`;
   }
@@ -77,7 +81,8 @@ export class Fijos {
     this.marcando.set(item.fijo.row);
     try {
       await this.store.marcarPagado(item);
-      this.ui.notify(`${item.fijo.servicio} marcado como pagado`);
+      const tarjeta = this.nombreTarjeta(item.fijo.tarjeta);
+      this.ui.notify(tarjeta ? `${item.fijo.servicio} cargado a ${tarjeta}` : `${item.fijo.servicio} marcado como pagado`);
     } catch (e) {
       this.ui.notify((e as Error).message, true);
     } finally {

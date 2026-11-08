@@ -44,6 +44,13 @@ const TIPOS_ABONO: { valor: TipoAbono; detalle: string }[] = [
   { valor: 'Abono a capital', detalle: 'Pago extra para bajar la deuda' },
   { valor: 'Pago total', detalle: 'Saldar todo lo que falta' },
 ];
+const TIPOS_PAGO_TARJETA: { valor: TipoAbono; detalle: string }[] = [
+  { valor: 'Pago parcial', detalle: 'Pagar una parte (mínimo u otro valor)' },
+  { valor: 'Pago total', detalle: 'Pagar toda la deuda de la tarjeta' },
+];
+
+const METODO_CREDITO = 'Tarjeta de Crédito';
+const CATEGORIA_PAGO_TARJETA = 'Pago Tarjetas';
 
 @Component({
   selector: 'app-forms-host',
@@ -72,6 +79,16 @@ export class FormsHost {
     categoria: [CATEGORIAS_GASTO[0]],
     metodoPago: [METODOS[0]],
     detalle: [''],
+    /** Tarjeta con la que se compra, o la que se paga si la categoría es "Pago Tarjetas". */
+    tarjeta: [''],
+  });
+  private readonly gastoValor = toSignal(this.gasto.valueChanges, { initialValue: this.gasto.getRawValue() });
+  /** Qué pide el campo de tarjeta en el gasto: la tarjeta que se paga, la de la compra, o nada. */
+  protected readonly gastoTarjeta = computed<'pago' | 'compra' | null>(() => {
+    const v = { ...this.gasto.getRawValue(), ...this.gastoValor() };
+    if (!this.store.tarjetas().length) return null;
+    if (v.categoria === CATEGORIA_PAGO_TARJETA) return 'pago';
+    return v.metodoPago === METODO_CREDITO ? 'compra' : null;
   });
 
   protected readonly ingreso = this.fb.group({
@@ -89,6 +106,8 @@ export class FormsHost {
     frecuencia: ['Mensual'],
     proveedor: [''],
     categoria: ['Servicios'],
+    /** Tarjeta a la que se cobra (vacío = se paga directo). */
+    tarjeta: [''],
   });
 
   protected readonly meta = this.fb.group({
@@ -131,9 +150,12 @@ export class FormsHost {
 
   /** Deuda: con o sin interés; la tasa puede venir mensual o efectiva anual (E.A.). */
   protected readonly deuda = this.fb.group({
+    tipoDeuda: ['Préstamo'],
     nombre: ['', Validators.required],
     acreedor: [''],
-    monto: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    monto: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+    cupo: new FormControl<number | null>(null),
+    diaPago: new FormControl<number | null>(null, [Validators.min(1), Validators.max(31)]),
     fecha: [toIsoDate(new Date()), Validators.required],
     conInteres: ['no'],
     tasa: new FormControl<number | null>(null),
@@ -155,7 +177,7 @@ export class FormsHost {
   });
 
   /** Pago a una deuda: cuota, abono a capital o pago total, con su razón. */
-  protected readonly tiposAbono = TIPOS_ABONO;
+  protected readonly tiposAbono = computed(() => (this.abonoCalculo()?.deuda.tipo === 'Tarjeta' ? TIPOS_PAGO_TARJETA : TIPOS_ABONO));
   protected readonly abono = this.fb.group({
     deudaId: ['', Validators.required],
     tipo: ['Cuota'],
@@ -164,21 +186,33 @@ export class FormsHost {
     nota: [''],
   });
   private readonly abonoValor = toSignal(this.abono.valueChanges, { initialValue: this.abono.getRawValue() });
-  protected readonly deudasActivas = computed(() => this.store.estadosDeuda().filter((e) => !e.pagada));
+  protected readonly deudasActivas = computed(() => this.store.estadosDeuda().filter((e) => !e.pagada && e.saldo > 0));
   /** Simula el pago para mostrar cuánto va a interés, cuánto a capital y el saldo que queda. */
   protected readonly abonoCalculo = computed(() => {
     const v = { ...this.abono.getRawValue(), ...this.abonoValor() };
     const deuda = this.store.deudas().find((d) => d.id === v.deudaId);
     const fecha = toDate(v.fecha ?? '') ?? new Date();
     if (!deuda) return null;
-    const saldo = estadoDeuda(deuda, this.store.abonos(), endOfMonth(fecha)).saldo;
+    const cargos = this.store.cargosTarjeta();
+    const saldo = estadoDeuda(deuda, this.store.abonos(), endOfMonth(fecha), cargos).saldo;
     const monto = Number(v.monto) || 0;
     const prueba = { row: -1, fecha, deudaId: deuda.id, deuda: deuda.nombre, tipo: v.tipo ?? '', monto, nota: '' };
-    const mov = estadoDeuda(deuda, [...this.store.abonos(), prueba], endOfMonth(fecha)).movimientos.find((m) => m.abono === prueba);
-    return { deuda, saldo, interes: mov?.interes ?? 0, capital: mov?.capital ?? 0, saldoDespues: mov?.saldoDespues ?? saldo, excede: monto > saldo };
+    const mov = estadoDeuda(deuda, [...this.store.abonos(), prueba], endOfMonth(fecha), cargos).movimientos.find((m) => m.abono === prueba);
+    return { deuda, saldo, interes: mov?.interes ?? 0, capital: mov?.capital ?? 0, saldoDespues: Math.max(saldo - monto, 0), excede: monto > saldo };
   });
 
   constructor() {
+    // Al pedir tarjeta en un gasto, preselecciona la primera.
+    effect(() => {
+      if (this.gastoTarjeta() && !this.gasto.controls.tarjeta.value) {
+        this.gasto.controls.tarjeta.setValue(this.store.tarjetas()[0]?.id ?? '');
+      }
+    });
+    // Una tarjeta casi siempre cobra interés E.A.
+    this.deuda.controls.tipoDeuda.valueChanges.subscribe((tipo) => {
+      if (tipo === 'Tarjeta') this.deuda.patchValue({ conInteres: 'si', tipoTasa: 'ea' });
+    });
+
     // "Pago total" llena el monto con el saldo pendiente.
     this.abono.controls.tipo.valueChanges.subscribe((tipo) => {
       if (tipo === 'Pago total') queueMicrotask(() => this.abono.controls.monto.setValue(this.abonoCalculo()?.saldo ?? null));
@@ -215,7 +249,29 @@ export class FormsHost {
       switch (kind) {
         case 'gasto': {
           const v = this.gasto.getRawValue();
-          await this.store.addGasto({ ...v, monto: v.monto ?? 0, fecha: toDate(v.fecha) });
+          const tarjeta = this.store.tarjetas().find((t) => t.id === v.tarjeta);
+          if (this.gastoTarjeta() === 'pago' && tarjeta) {
+            // Pagar una tarjeta no es un gasto nuevo: se registra como pago de esa deuda.
+            const saldo = this.store.estadosDeuda().find((e) => e.deuda.id === tarjeta.id)?.saldo ?? 0;
+            const monto = v.monto ?? 0;
+            await this.store.addAbono({
+              deuda: tarjeta,
+              tipo: monto >= saldo ? 'Pago total' : 'Pago parcial',
+              monto,
+              fecha: toDate(v.fecha) ?? new Date(),
+              nota: v.descripcion.trim(),
+            });
+            form.reset();
+            this.close();
+            this.ui.notify(`Registrado como pago de ${tarjeta.nombre}`);
+            return;
+          }
+          await this.store.addGasto({
+            ...v,
+            monto: v.monto ?? 0,
+            fecha: toDate(v.fecha),
+            tarjeta: this.gastoTarjeta() === 'compra' && tarjeta ? tarjeta.id : '',
+          });
           break;
         }
         case 'ingreso': {
@@ -225,7 +281,7 @@ export class FormsHost {
         }
         case 'fijo': {
           const v = this.fijo.getRawValue();
-          await this.store.addFijo({ ...v, monto: v.monto ?? 0 });
+          await this.store.addFijo({ ...v, monto: v.monto ?? 0, tarjeta: v.tarjeta });
           break;
         }
         case 'meta': {
@@ -240,6 +296,11 @@ export class FormsHost {
         }
         case 'deuda': {
           const v = this.deuda.getRawValue();
+          const esTarjeta = v.tipoDeuda === 'Tarjeta';
+          if (!esTarjeta && !((v.monto ?? 0) > 0)) {
+            this.ui.notify('Indica el monto de la deuda', true);
+            return;
+          }
           if (v.conInteres === 'si' && !(Number(v.tasa) > 0)) {
             this.ui.notify('Indica el porcentaje de interés o marca "Sin interés"', true);
             return;
@@ -250,7 +311,10 @@ export class FormsHost {
             monto: v.monto ?? 0,
             fecha: toDate(v.fecha),
             tasaMensual: Math.round(this.deudaCalculo().tasaMensual * 10000) / 10000,
-            cuota: Number(v.cuota) || 0,
+            cuota: esTarjeta ? 0 : Number(v.cuota) || 0,
+            tipo: esTarjeta ? 'Tarjeta' : 'Préstamo',
+            cupo: esTarjeta ? Number(v.cupo) || 0 : 0,
+            diaPago: esTarjeta ? Number(v.diaPago) || null : null,
           });
           break;
         }

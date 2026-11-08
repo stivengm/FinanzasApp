@@ -4,7 +4,7 @@ import { ApiService, SesionExpiradaError, WriteValues } from './api.service';
 import { addMonths, endOfMonth, monthsBetween, sameMonth, startOfMonth, toIsoDate } from './dates';
 import { DEMO_PERFIL, demoTables } from './demo-data';
 import { EstadoDeuda, estadoDeuda } from './deudas';
-import { Abono, Deuda, Fijo, FijoMes, Gasto, Ingreso, MetaAhorro, Movimiento, Pago, Perfil, SheetTable, TAB_LABELS, TabKey, TipoAbono } from './models';
+import { Abono, CargoTarjeta, Deuda, Fijo, FijoMes, Gasto, Ingreso, MetaAhorro, Movimiento, Pago, Perfil, SheetTable, TAB_LABELS, TabKey, TipoAbono } from './models';
 import { DIAS_SEMESTRE, calcularPrima, desgloseSalario, semestreDe } from './nomina';
 import { mapRows, normalize, toDate, toNumber, toText } from './parse';
 import { SessionService } from './session.service';
@@ -21,6 +21,16 @@ export interface MonthSummary {
   ahorro: number;
   gastos: number;
   balance: number;
+}
+
+/** Pago de una tarjeta en el mes: aparece en Fijos y en los vencimientos de Inicio. */
+export interface PagoTarjetaMes {
+  estado: EstadoDeuda;
+  vence: Date;
+  /** Lo que falta pagar del saldo con el que empezó el mes. */
+  porPagar: number;
+  pagado: number;
+  pendiente: boolean;
 }
 
 export interface PrimaSugerida {
@@ -113,6 +123,16 @@ export class FinanceStore {
   readonly pagos = computed(() => this.mapPagos(this.tables().pagos));
   readonly gastos = computed(() => this.mapGastos(this.tables().gastos));
   readonly deudas = computed(() => this.mapDeudas(this.tables().deudas));
+  readonly tarjetas = computed(() => this.deudas().filter((d) => d.tipo === 'Tarjeta'));
+  /** Compras con tarjeta: gastos con tarjeta y fijos pagados con tarjeta. */
+  readonly cargosTarjeta = computed<CargoTarjeta[]>(() => [
+    ...this.gastos()
+      .filter((g) => g.tarjeta)
+      .map((g) => ({ fecha: g.fecha, tarjeta: g.tarjeta, descripcion: g.descripcion, monto: g.monto, origen: 'Gastos' as const, row: g.row })),
+    ...this.pagos()
+      .filter((p) => p.tarjeta)
+      .map((p) => ({ fecha: p.fecha, tarjeta: p.tarjeta, descripcion: p.servicio, monto: p.monto, origen: 'Pagos' as const, row: p.row })),
+  ]);
   /** Abonos enlazados a su deuda (por ID, o por nombre si la fila no trae ID). */
   readonly abonos = computed(() => {
     const porNombre = new Map(this.deudas().map((d) => [normalize(d.nombre), d.id]));
@@ -123,19 +143,36 @@ export class FinanceStore {
     const fin = endOfMonth(this.month());
     return this.deudas()
       .filter((d) => !d.fecha || d.fecha <= fin)
-      .map((d) => estadoDeuda(d, this.abonos(), fin));
+      .map((d) => estadoDeuda(d, this.abonos(), fin, this.cargosTarjeta()));
+  });
+  /** Pagos de tarjeta del mes seleccionado (solo tarjetas con saldo de meses anteriores o pagos este mes). */
+  readonly pagosTarjetaMes = computed<PagoTarjetaMes[]>(() => {
+    const month = this.month();
+    const lastDay = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    return this.estadosDeuda()
+      .filter((e) => e.deuda.tipo === 'Tarjeta' && (e.saldoInicioMes > 0 || e.pagadoMes > 0))
+      .map((estado) => ({
+        estado,
+        vence: new Date(month.getFullYear(), month.getMonth(), Math.min(estado.deuda.diaPago || lastDay, lastDay)),
+        porPagar: estado.porPagarMes,
+        pagado: estado.pagadoMes,
+        pendiente: estado.porPagarMes > 0,
+      }))
+      .sort((a, b) => a.vence.getTime() - b.vence.getTime());
   });
   readonly resumenDeudas = computed(() => {
     const estados = this.estadosDeuda();
-    const activas = estados.filter((e) => !e.pagada);
+    // Una tarjeta en $0 no cuenta como deuda activa.
+    const activas = estados.filter((e) => !e.pagada && (e.deuda.tipo !== 'Tarjeta' || e.saldo > 0));
+    const prestamos = estados.filter((e) => e.deuda.tipo !== 'Tarjeta');
     return {
       saldo: activas.reduce((s, e) => s + e.saldo, 0),
-      prestado: estados.reduce((s, e) => s + e.deuda.monto, 0),
-      capitalPagado: estados.reduce((s, e) => s + e.capitalPagado, 0),
+      prestado: prestamos.reduce((s, e) => s + e.deuda.monto, 0),
+      capitalPagado: prestamos.reduce((s, e) => s + e.capitalPagado, 0),
       pagadoMes: estados.reduce((s, e) => s + e.pagadoMes, 0),
       interesMes: activas.reduce((s, e) => s + e.interesMes, 0),
       activas: activas.length,
-      pagadas: estados.length - activas.length,
+      pagadas: estados.filter((e) => e.pagada).length,
     };
   });
 
@@ -204,7 +241,7 @@ export class FinanceStore {
       })),
       ...this.abonos().map((a) => ({
         tipo: 'deuda' as const,
-        titulo: `Pago deuda · ${a.deuda}`,
+        titulo: `${this.tarjetas().some((t) => t.id === a.deudaId) ? 'Pago tarjeta' : 'Pago deuda'} · ${a.deuda}`,
         fecha: a.fecha,
         etiqueta: a.tipo || 'Abono',
         monto: -a.monto,
@@ -292,6 +329,7 @@ export class FinanceStore {
       Categoría: g.categoria,
       'Método de Pago': g.metodoPago,
       Monto: g.monto,
+      Tarjeta: g.tarjeta,
     });
   }
 
@@ -335,6 +373,7 @@ export class FinanceStore {
       Frecuencia: f.frecuencia,
       'Día de Pago': f.diaPago ?? '',
       Monto: f.monto,
+      Tarjeta: f.tarjeta,
     });
   }
 
@@ -358,6 +397,9 @@ export class FinanceStore {
       Fecha: toIsoDate(d.fecha ?? new Date()),
       'Interés Mensual': d.tasaMensual,
       'Cuota Mensual': d.cuota,
+      Tipo: d.tipo,
+      Cupo: d.cupo,
+      'Día de Pago': d.diaPago ?? '',
     });
   }
 
@@ -375,7 +417,7 @@ export class FinanceStore {
   marcarPagado(item: FijoMes, monto = item.fijo.monto): Promise<void> {
     const today = new Date();
     const fecha = sameMonth(today, this.month()) ? today : item.vence;
-    return this.write('pagos', { Fecha: toIsoDate(fecha), Servicio: item.fijo.servicio, Monto: monto });
+    return this.write('pagos', { Fecha: toIsoDate(fecha), Servicio: item.fijo.servicio, Monto: monto, Tarjeta: item.fijo.tarjeta });
   }
 
   private async write(key: TabKey, values: WriteValues): Promise<void> {
@@ -413,6 +455,22 @@ export class FinanceStore {
   }
 
   // ---------- Cálculos por mes ----------
+
+  /**
+   * Lo que pesan las deudas en el mes: los pagos a préstamos completos y, en tarjetas, solo los intereses
+   * (las compras ya contaron como gasto cuando se hicieron).
+   */
+  pagosDeudaDe(month: Date): number {
+    const ids = new Set(this.tarjetas().map((t) => t.id));
+    const prestamos = this.abonos()
+      .filter((a) => sameMonth(a.fecha, month) && !ids.has(a.deudaId))
+      .reduce((s, a) => s + a.monto, 0);
+    const interesesTarjeta = this.tarjetas()
+      .flatMap((t) => estadoDeuda(t, this.abonos(), endOfMonth(month), this.cargosTarjeta()).movimientos)
+      .filter((m) => !m.esCargo && sameMonth(m.fecha, month))
+      .reduce((s, m) => s + m.interes, 0);
+    return prestamos + interesesTarjeta;
+  }
 
   /** Salario bruto de un mes: el fijo del perfil, o lo registrado ese mes si es variable. */
   salarioBrutoDe(month: Date): number {
@@ -487,9 +545,7 @@ export class FinanceStore {
     const variables = this.gastos()
       .filter((g) => sameMonth(g.fecha, month))
       .reduce((s, g) => s + g.monto, 0);
-    const deudas = this.abonos()
-      .filter((a) => sameMonth(a.fecha, month))
-      .reduce((s, a) => s + a.monto, 0);
+    const deudas = this.pagosDeudaDe(month);
     const ahorro = this.metas().reduce((s, m) => s + m.aporteMensual, 0);
     const gastos = fijos + variables + deudas;
     return { month, ingresos, fijos, variables, deudas, ahorro, gastos, balance: ingresos - gastos - ahorro };
@@ -561,6 +617,7 @@ export class FinanceStore {
         frecuencia: ['frecuencia', 'periodicidad'],
         diaPago: ['dia de pago', 'dia pago', 'dia', 'vencimiento', 'dia vencimiento'],
         monto: MONTO,
+        tarjeta: ['tarjeta'],
       },
       (get, row) => {
         const servicio = toText(get('servicio'));
@@ -576,6 +633,7 @@ export class FinanceStore {
           frecuencia: toText(get('frecuencia')) || 'Mensual',
           diaPago: diaPago && diaPago <= 31 ? Math.round(diaPago) : null,
           monto: Math.abs(toNumber(get('monto'))),
+          tarjeta: toText(get('tarjeta')),
         };
       },
     );
@@ -585,11 +643,11 @@ export class FinanceStore {
     if (!t) return [];
     return mapRows(
       t,
-      { fecha: ['fecha'], servicio: ['servicio', 'concepto', 'nombre', 'fijo'], monto: MONTO },
+      { fecha: ['fecha'], servicio: ['servicio', 'concepto', 'nombre', 'fijo'], monto: MONTO, tarjeta: ['tarjeta'] },
       (get, row) => {
         const servicio = toText(get('servicio'));
         if (!servicio) return null;
-        return { row, fecha: toDate(get('fecha')), servicio, monto: Math.abs(toNumber(get('monto'))) };
+        return { row, fecha: toDate(get('fecha')), servicio, monto: Math.abs(toNumber(get('monto'))), tarjeta: toText(get('tarjeta')) };
       },
     );
   }
@@ -606,6 +664,9 @@ export class FinanceStore {
         fecha: ['fecha', 'fecha inicio'],
         tasa: ['interes mensual', 'interes', 'tasa mensual', 'tasa'],
         cuota: ['cuota mensual', 'cuota'],
+        tipo: ['tipo'],
+        cupo: ['cupo', 'limite'],
+        diaPago: ['dia de pago', 'dia pago'],
       },
       (get, row) => {
         const nombre = toText(get('nombre'));
@@ -622,6 +683,9 @@ export class FinanceStore {
           fecha: toDate(get('fecha')),
           tasaMensual: tasa,
           cuota: Math.abs(toNumber(get('cuota'))),
+          tipo: normalize(get('tipo')).includes('tarjeta') ? ('Tarjeta' as const) : ('Préstamo' as const),
+          cupo: Math.abs(toNumber(get('cupo'))),
+          diaPago: Math.round(toNumber(get('diaPago'))) || null,
         };
       },
     );
@@ -666,6 +730,7 @@ export class FinanceStore {
         categoria: ['categoria', 'tipo', 'clase'],
         metodoPago: ['metodo de pago', 'metodo', 'medio de pago', 'medio', 'forma de pago', 'pago'],
         monto: MONTO,
+        tarjeta: ['tarjeta'],
       },
       (get, row) => {
         const monto = toNumber(get('monto'));
@@ -679,6 +744,7 @@ export class FinanceStore {
           categoria: toText(get('categoria')),
           metodoPago: toText(get('metodoPago')),
           monto: Math.abs(monto),
+          tarjeta: toText(get('tarjeta')),
         };
       },
     );

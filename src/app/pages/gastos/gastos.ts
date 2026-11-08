@@ -65,6 +65,10 @@ export class Gastos {
       .filter((g) => !q || normalize(`${g.descripcion} ${g.detalle} ${g.categoria}`).includes(q));
   });
 
+  protected nombreTarjeta(id: string): string | null {
+    return id ? (this.store.tarjetas().find((t) => t.id === id)?.nombre ?? null) : null;
+  }
+
   protected hora(date: Date | null): string {
     const day = relativeDay(date);
     if (!date || (date.getHours() === 0 && date.getMinutes() === 0)) return day;

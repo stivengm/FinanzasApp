@@ -94,7 +94,9 @@
         </div>
         <div class="flex items-center justify-between rounded-lg bg-surface-container-low px-space-sm py-space-xs font-mono text-label-micro text-on-surface-variant">
           <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">sell</span>{{ g.categoria || 'Sin categoría' }}</span>
-          @if (g.metodoPago) {
+          @if (nombreTarjeta(g.tarjeta); as t) {
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">credit_card</span>{{ t }}</span>
+          } @else if (g.metodoPago) {
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">{{ methodIcon(g.metodoPago) }}</span>{{ g.metodoPago }}</span>
           }
         </div>

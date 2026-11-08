@@ -32,6 +32,8 @@ export interface Fijo {
   frecuencia: string;
   diaPago: number | null;
   monto: number;
+  /** ID de la tarjeta a la que se cobra (vacío = se paga directo). */
+  tarjeta: string;
 }
 
 export interface Pago {
@@ -39,6 +41,8 @@ export interface Pago {
   fecha: Date | null;
   servicio: string;
   monto: number;
+  /** ID de la tarjeta con la que se pagó este fijo (vacío = pago directo). */
+  tarjeta: string;
 }
 
 export interface Gasto {
@@ -49,7 +53,11 @@ export interface Gasto {
   categoria: string;
   metodoPago: string;
   monto: number;
+  /** ID de la tarjeta de crédito con la que se hizo la compra. */
+  tarjeta: string;
 }
+
+export type TipoDeuda = 'Préstamo' | 'Tarjeta';
 
 export interface Deuda {
   row: number;
@@ -64,9 +72,25 @@ export interface Deuda {
   tasaMensual: number;
   /** Cuota mensual pactada (opcional, 0 si no hay). */
   cuota: number;
+  /** Préstamo (crédito o persona) o Tarjeta de crédito. */
+  tipo: TipoDeuda;
+  /** Cupo de la tarjeta (0 en préstamos). */
+  cupo: number;
+  /** Día del mes en que se paga la tarjeta (null si no aplica). */
+  diaPago: number | null;
 }
 
-export type TipoAbono = 'Cuota' | 'Abono a capital' | 'Pago total';
+export type TipoAbono = 'Cuota' | 'Abono a capital' | 'Pago total' | 'Pago parcial';
+
+/** Compra cargada a una tarjeta (desde Gastos o un fijo pagado con tarjeta). */
+export interface CargoTarjeta {
+  fecha: Date | null;
+  tarjeta: string;
+  descripcion: string;
+  monto: number;
+  origen: 'Gastos' | 'Pagos';
+  row: number;
+}
 
 export interface Abono {
   row: number;

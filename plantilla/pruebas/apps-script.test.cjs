@@ -39,8 +39,17 @@ assert.strictEqual(gas.post({ ...a, action: 'data' }).tablas.gastos.rows[0].cell
 assert.ok(gas.post({ ...s, action: 'append', sheet: 'deudas', values: { id: 'D1', deuda: 'Crédito', monto: 5000000, fecha: '2026-11-08', interesmensual: 1.8, cuotamensual: 450000 } }).ok);
 assert.ok(gas.post({ ...s, action: 'append', sheet: 'abonos', values: { fecha: '2026-12-08', deudaid: 'D1', deuda: 'Crédito', tipo: 'Cuota', monto: 450000, nota: 'Cuota 1' } }).ok);
 const dd = gas.post({ ...s, action: 'data' }).tablas;
-assert.deepStrictEqual(dd.deudas.headers, ['Usuario', 'ID', 'Deuda', 'Acreedor', 'Monto', 'Fecha', 'Interés Mensual', 'Cuota Mensual']);
-assert.deepStrictEqual(dd.deudas.rows[0].cells.slice(1), ['D1', 'Crédito', '', 5000000, '2026-11-08', 1.8, 450000]);
+assert.deepStrictEqual(dd.deudas.headers, ['Usuario', 'ID', 'Deuda', 'Acreedor', 'Monto', 'Fecha', 'Interés Mensual', 'Cuota Mensual', 'Tipo', 'Cupo', 'Día de Pago']);
+assert.deepStrictEqual(dd.deudas.rows[0].cells.slice(1, 8), ['D1', 'Crédito', '', 5000000, '2026-11-08', 1.8, 450000]);
+
+// Tarjeta: compra en Gastos y fijo pagado con tarjeta quedan enlazados por la columna Tarjeta
+assert.ok(gas.post({ ...s, action: 'append', sheet: 'deudas', values: { id: 'V1', deuda: 'Visa', monto: 0, fecha: '2026-11-01', interesmensual: 2, tipo: 'Tarjeta', cupo: 8000000, diadepago: 15 } }).ok);
+assert.ok(gas.post({ ...s, action: 'append', sheet: 'gastos', values: { fecha: '2026-11-03', descripcion: 'Mercado', metododepago: 'Tarjeta de Crédito', monto: 300000, tarjeta: 'V1' } }).ok);
+assert.ok(gas.post({ ...s, action: 'append', sheet: 'pagos', values: { fecha: '2026-11-05', servicio: 'Netflix', monto: 45000, tarjeta: 'V1' } }).ok);
+const tt = gas.post({ ...s, action: 'data' }).tablas;
+assert.deepStrictEqual(tt.deudas.rows[1].cells.slice(8), ['Tarjeta', 8000000, 15]);
+assert.strictEqual(tt.gastos.rows.at(-1).cells.at(-1), 'V1');
+assert.strictEqual(tt.pagos.rows.at(-1).cells.at(-1), 'V1');
 assert.deepStrictEqual(dd.abonos.rows[0].cells.slice(1), ['2026-12-08', 'D1', 'Crédito', 'Cuota', 450000, 'Cuota 1']);
 assert.strictEqual(gas.post({ ...a, action: 'data' }).tablas.deudas.rows.length, 0);
 
@@ -61,7 +70,7 @@ viejo.sheets.Gastos.data.length = 0;
 viejo.sheets.Gastos.data.push(['Fecha', 'Descripción', 'Detalle', 'Categoría', 'Método de Pago', 'Monto']);
 delete viejo.sheets.Deudas;
 viejo.post({ action: 'data', usuario: 'yo', token: 'tok' });
-assert.deepStrictEqual(viejo.sheets.Gastos.data[0].slice(-1), ['Usuario']);
+assert.deepStrictEqual(viejo.sheets.Gastos.data[0].slice(-2), ['Usuario', 'Tarjeta']);
 assert.ok(viejo.sheets.Deudas, 'crea la pestaña Deudas si no existe');
 
 console.log('OK: todas las pruebas del Apps Script pasaron');
