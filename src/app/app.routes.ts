@@ -27,6 +27,7 @@ export const routes: Routes = [
       { path: 'gastos', data: { title: 'Gastos' }, loadComponent: () => import('./pages/gastos/gastos').then((m) => m.Gastos) },
       { path: 'deudas', data: { title: 'Deudas' }, loadComponent: () => import('./pages/deudas/deudas').then((m) => m.Deudas) },
       { path: 'sheets', data: { title: 'Estadísticas' }, loadComponent: () => import('./pages/sheets/sheets').then((m) => m.Sheets) },
+      { path: 'consulta', data: { title: 'Consulta' }, loadComponent: () => import('./pages/consulta/consulta').then((m) => m.Consulta) },
       { path: 'perfil', data: { title: 'Perfil' }, loadComponent: () => import('./pages/perfil/perfil').then((m) => m.PerfilPage) },
     ],
   },

@@ -1,0 +1,336 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex flex-col gap-space-xs pt-space-xs">
+    <span class="font-mono text-label-micro tracking-wider text-on-surface-variant uppercase">Consulta por cuenta</span>
+    <h1 class="text-headline-lg">Consulta de varios meses</h1>
+    <span class="flex min-w-0 items-center gap-1 text-body-md text-on-surface-variant">
+      <span class="material-symbols-outlined text-[18px]">account_circle</span>
+      <span class="truncate">{{ cuenta() }}</span>
+    </span>
+  </div>
+
+  <!-- Rango -->
+  <div class="card flex flex-col gap-space-md p-space-md">
+    <div class="no-scrollbar -mx-space-md flex gap-space-xs overflow-x-auto px-space-md">
+      @for (p of presets; track p.label) {
+        <button
+          type="button"
+          class="flex-shrink-0 rounded-full px-space-md py-space-xs text-body-md whitespace-nowrap transition-colors"
+          [class]="presetActivo(p.desde) ? 'bg-primary text-on-primary font-semibold' : 'bg-surface-container text-on-surface hover:bg-surface-container-high'"
+          (click)="aplicarPreset(p.desde)"
+        >
+          {{ p.label }}
+        </button>
+      }
+    </div>
+    <div class="grid grid-cols-2 gap-space-sm">
+      <label class="flex flex-col gap-1">
+        <span class="font-mono text-label-micro text-on-surface-variant uppercase">Desde</span>
+        <input class="field h-11 px-space-sm text-body-sm" type="month" [value]="desdeValor()" (change)="setDesde($any($event.target).value)" />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="font-mono text-label-micro text-on-surface-variant uppercase">Hasta</span>
+        <input class="field h-11 px-space-sm text-body-sm" type="month" [value]="hastaValor()" (change)="setHasta($any($event.target).value)" />
+      </label>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-space-sm">
+      <span class="font-mono text-label-micro text-on-surface-variant">{{ meses().length }} {{ meses().length === 1 ? 'mes' : 'meses' }} · {{ etiquetaRango() }}</span>
+      <div class="flex gap-space-xs">
+        <button type="button" class="flex items-center gap-1 rounded-lg px-space-sm py-space-xs text-label-md font-semibold hover:bg-surface-container disabled:opacity-60" [disabled]="store.loading()" (click)="actualizar()">
+          <span class="material-symbols-outlined text-[18px]" [class.animate-spin]="store.loading()">sync</span> Actualizar
+        </button>
+        <button type="button" class="flex items-center gap-1 rounded-lg px-space-sm py-space-xs text-label-md font-semibold hover:bg-surface-container" (click)="descargarCsv()">
+          <span class="material-symbols-outlined text-[18px]">download</span> CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  @let t = totales();
+  <div class="grid grid-cols-2 gap-space-sm">
+    <div class="card flex min-w-0 flex-col gap-1 p-space-md">
+      <span class="text-body-sm text-on-surface-variant">Total ingresado</span>
+      <span class="truncate font-display text-headline-md font-bold">{{ t.ingresos | money }}</span>
+      <span class="font-mono text-label-micro text-on-surface-variant">Prom. {{ t.promIngresos | short }}/mes</span>
+    </div>
+    <div class="card flex min-w-0 flex-col gap-1 p-space-md">
+      <span class="text-body-sm text-on-surface-variant">Total gastado</span>
+      <span class="truncate font-display text-headline-md font-bold">{{ t.egresos | money }}</span>
+      <span class="font-mono text-label-micro text-on-surface-variant">Prom. {{ t.promEgresos | short }}/mes</span>
+    </div>
+    <div class="card flex min-w-0 flex-col gap-1 p-space-md">
+      <span class="text-body-sm text-on-surface-variant">Ahorro</span>
+      <span class="truncate font-display text-headline-md font-bold">{{ t.ahorro | money }}</span>
+      <span class="font-mono text-label-micro text-on-surface-variant">{{ t.tasaAhorro.toFixed(1) }}% de lo ingresado</span>
+    </div>
+    <div class="card flex min-w-0 flex-col gap-1 p-space-md">
+      <span class="flex items-center justify-between text-body-sm text-on-surface-variant">
+        Balance libre
+        <span class="material-symbols-outlined text-[16px]" [class]="t.balance >= 0 ? 'text-secondary' : 'text-error'">{{ t.balance >= 0 ? 'trending_up' : 'trending_down' }}</span>
+      </span>
+      <span class="truncate font-display text-headline-md font-bold" [class.text-error]="t.balance < 0">{{ t.balance | money }}</span>
+      <span class="font-mono text-label-micro text-on-surface-variant">{{ t.deficit ? t.deficit + ' ' + (t.deficit === 1 ? 'mes' : 'meses') + ' en déficit' : 'Sin meses en déficit' }}</span>
+    </div>
+  </div>
+
+  <!-- Ingresos vs egresos -->
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-wrap items-start justify-between gap-space-sm">
+      <div class="flex flex-col">
+        <h2 class="text-headline-md">Ingresos vs egresos</h2>
+        <span class="text-body-sm text-on-surface-variant">Toca o pasa el mouse por un mes para ver el detalle</span>
+      </div>
+      <div class="flex flex-shrink-0 gap-space-sm font-mono text-label-micro text-on-surface-variant">
+        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-secondary"></span>Ingresos</span>
+        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-primary-container"></span>Egresos</span>
+      </div>
+    </div>
+
+    <div class="min-h-[4.5rem] rounded-lg bg-surface-container-low p-space-sm">
+      @if (hoverMes(); as h) {
+        <div class="flex flex-col gap-1">
+          <span class="text-body-md font-semibold">{{ monthLabel(h.month) }}</span>
+          <div class="grid grid-cols-3 gap-space-xs font-mono text-label-micro">
+            <span class="flex flex-col"><span class="text-on-surface-variant">Ingresos</span><span class="text-body-sm font-semibold">{{ h.ingresos | money }}</span></span>
+            <span class="flex flex-col"><span class="text-on-surface-variant">Egresos</span><span class="text-body-sm font-semibold">{{ h.gastos | money }}</span></span>
+            <span class="flex flex-col"><span class="text-on-surface-variant">Balance</span><span class="text-body-sm font-semibold" [class.text-error]="h.balance < 0">{{ h.balance | money }}</span></span>
+          </div>
+        </div>
+      } @else {
+        <div class="flex flex-col gap-1">
+          <span class="text-body-md font-semibold">Todo el período</span>
+          <div class="grid grid-cols-3 gap-space-xs font-mono text-label-micro">
+            <span class="flex flex-col"><span class="text-on-surface-variant">Ingresos</span><span class="text-body-sm font-semibold">{{ t.ingresos | short }}</span></span>
+            <span class="flex flex-col"><span class="text-on-surface-variant">Egresos</span><span class="text-body-sm font-semibold">{{ t.egresos | short }}</span></span>
+            <span class="flex flex-col"><span class="text-on-surface-variant">Balance</span><span class="text-body-sm font-semibold" [class.text-error]="t.balance < 0">{{ t.balance | short }}</span></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="no-scrollbar -mx-space-sm overflow-x-auto px-space-sm" (mouseleave)="hover.set(null)">
+      <div class="flex h-52 items-end gap-1 border-b border-outline-variant" [style.min-width.px]="evolucion().length * 44">
+        @for (m of evolucion(); track m.mes.getTime(); let i = $index) {
+          <button
+            type="button"
+            class="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded-t-md pt-1 transition-colors"
+            [class.bg-surface-container-low]="hover() === i"
+            [attr.aria-label]="monthLabel(m.mes) + ': ingresos ' + (m.ingresos | money) + ', egresos ' + (m.egresos | money)"
+            (mouseenter)="hover.set(i)"
+            (focus)="hover.set(i)"
+            (click)="hover.set(i)"
+          >
+            <div class="flex h-full w-full items-end justify-center gap-[2px]">
+              <div class="w-[38%] max-w-5 rounded-t transition-all duration-500" [class]="hover() === null || hover() === i ? 'bg-secondary' : 'bg-secondary/40'" [style.height.%]="m.hIng"></div>
+              <div class="w-[38%] max-w-5 rounded-t transition-all duration-500" [class]="hover() === null || hover() === i ? 'bg-primary-container' : 'bg-primary-container/40'" [style.height.%]="m.hEgr"></div>
+            </div>
+          </button>
+        }
+      </div>
+      <div class="flex gap-1 pt-1" [style.min-width.px]="evolucion().length * 44">
+        @for (m of evolucion(); track m.mes.getTime(); let i = $index) {
+          <span class="flex flex-1 flex-col items-center font-mono text-label-micro" [class]="hover() === i ? 'text-on-surface font-semibold' : 'text-on-surface-variant'">
+            {{ m.label }}
+            <span class="h-1.5 w-1.5 rounded-full" [class]="m.balance >= 0 ? 'bg-secondary' : 'bg-error'" [title]="m.balance >= 0 ? 'Superávit' : 'Déficit'"></span>
+          </span>
+        }
+      </div>
+    </div>
+    <span class="flex items-center gap-space-sm font-mono text-label-micro text-on-surface-variant">
+      <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>Superávit</span>
+      <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-error"></span>Déficit</span>
+    </span>
+  </section>
+
+  <!-- Composición de egresos -->
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-col">
+      <h2 class="text-headline-md">¿En qué se fue el dinero?</h2>
+      <span class="text-body-sm text-on-surface-variant">Egresos de cada mes por tipo</span>
+    </div>
+    <div class="flex flex-wrap gap-x-space-md gap-y-1 font-mono text-label-micro text-on-surface-variant">
+      @for (p of partes; track p.key) {
+        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm" [style.background]="colores[p.key]"></span>{{ p.label }}</span>
+      }
+    </div>
+    <div class="no-scrollbar -mx-space-sm overflow-x-auto px-space-sm">
+      <div class="flex h-44 items-end gap-1 border-b border-outline-variant" [style.min-width.px]="composicion().length * 44">
+        @for (m of composicion(); track $index) {
+          <div class="flex h-full flex-1 flex-col items-center justify-end" [title]="m.label + ': ' + (m.total | money)">
+            <div class="flex h-full w-[55%] max-w-8 flex-col-reverse justify-start gap-[2px]">
+              @for (s of m.segs; track s.key; let first = $first; let last = $last) {
+                <div class="w-full transition-all duration-500" [class.rounded-t]="last" [style.height.%]="s.h" [style.background]="colores[s.key]" [title]="s.label + ': ' + (s.value | money)"></div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="flex gap-1 pt-1" [style.min-width.px]="composicion().length * 44">
+        @for (m of composicion(); track $index) {
+          <span class="flex flex-1 flex-col items-center font-mono text-label-micro text-on-surface-variant">{{ m.label }}<span class="text-[10px]">{{ m.total | short }}</span></span>
+        }
+      </div>
+    </div>
+    <div class="flex flex-col gap-space-xs">
+      @for (p of composicionTotal(); track p.key) {
+        <div class="flex items-center justify-between gap-space-sm rounded-lg bg-surface-container-low px-space-sm py-space-xs">
+          <span class="flex items-center gap-space-xs text-body-md"><span class="h-3 w-3 rounded-sm" [style.background]="colores[p.key]"></span>{{ p.label }}</span>
+          <span class="flex items-baseline gap-space-sm">
+            <span class="font-mono text-label-micro text-on-surface-variant">{{ p.pct.toFixed(0) }}%</span>
+            <span class="font-mono text-numeric-table font-semibold">{{ p.value | money }}</span>
+          </span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Desgloses -->
+  <ng-template #ranking let-items let-color="color" let-vacio="vacio">
+    <div class="flex flex-col gap-space-sm">
+      @for (it of items; track it.nombre) {
+        <div class="flex flex-col gap-1">
+          <div class="flex items-baseline justify-between gap-space-sm text-body-md">
+            <span class="flex min-w-0 items-center gap-space-xs">
+              <span class="material-symbols-outlined text-[16px] text-on-surface-variant">{{ iconFor(it.nombre, it.nombre) }}</span>
+              <span class="truncate">{{ it.nombre }}</span>
+            </span>
+            <span class="flex-shrink-0 font-mono text-numeric-table font-semibold">{{ it.total | money }}</span>
+          </div>
+          <div class="h-2 overflow-hidden rounded-full bg-surface-container">
+            <div class="h-full rounded-full transition-all duration-500" [style.width.%]="it.pct" [style.background]="color"></div>
+          </div>
+        </div>
+      } @empty {
+        <span class="text-body-md text-on-surface-variant">{{ vacio }}</span>
+      }
+    </div>
+  </ng-template>
+
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-col">
+      <h2 class="text-headline-md">Ingresos por fuente</h2>
+      <span class="text-body-sm text-on-surface-variant">Salario neto, primas y extras del período</span>
+    </div>
+    <ng-container *ngTemplateOutlet="ranking; context: { $implicit: ingresosPorTipo(), color: '#006c49', vacio: 'Sin ingresos en el período.' }" />
+  </section>
+
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-col">
+      <h2 class="text-headline-md">Gastos variables por categoría</h2>
+      <span class="text-body-sm text-on-surface-variant">{{ t.variables | money }} en total</span>
+    </div>
+    <ng-container *ngTemplateOutlet="ranking; context: { $implicit: gastosPorCategoria(), color: colores.variables, vacio: 'Sin gastos variables en el período.' }" />
+  </section>
+
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-col">
+      <h2 class="text-headline-md">Responsabilidades fijas</h2>
+      <span class="text-body-sm text-on-surface-variant">{{ t.fijos | money }} entre pagados y pendientes</span>
+    </div>
+    <ng-container *ngTemplateOutlet="ranking; context: { $implicit: fijosPorServicio(), color: colores.fijos, vacio: 'Sin responsabilidades fijas.' }" />
+  </section>
+
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <div class="flex flex-col">
+      <h2 class="text-headline-md">Deudas y tarjetas</h2>
+      <span class="text-body-sm text-on-surface-variant">Pagos registrados en el período</span>
+    </div>
+    @let d = deudasResumen();
+    <div class="grid grid-cols-2 gap-space-sm">
+      <div class="flex min-w-0 flex-col gap-1 rounded-lg bg-surface-container-low p-space-sm">
+        <span class="font-mono text-label-micro text-on-surface-variant uppercase">Pagado ({{ d.pagos }})</span>
+        <span class="truncate font-mono text-numeric-table font-semibold">{{ d.pagado | money }}</span>
+      </div>
+      <div class="flex min-w-0 flex-col gap-1 rounded-lg bg-surface-container-low p-space-sm">
+        <span class="font-mono text-label-micro text-on-surface-variant uppercase">Debes hoy ({{ d.activas }})</span>
+        <span class="truncate font-mono text-numeric-table font-semibold">{{ d.saldoHoy | money }}</span>
+      </div>
+    </div>
+    <ng-container *ngTemplateOutlet="ranking; context: { $implicit: deudasPagos(), color: colores.deudas, vacio: 'Sin pagos a deudas en el período.' }" />
+  </section>
+
+  <!-- Tabla mensual -->
+  <section class="card flex flex-col gap-space-md p-space-lg">
+    <h2 class="text-headline-md">Detalle mes a mes</h2>
+    <div class="-mx-space-lg overflow-x-auto px-space-lg">
+      <table class="w-full min-w-[34rem] border-collapse font-mono text-label-micro">
+        <thead>
+          <tr class="border-b border-outline-variant text-left text-on-surface-variant uppercase">
+            <th class="py-space-xs pr-space-sm font-medium">Mes</th>
+            <th class="py-space-xs pr-space-sm text-right font-medium">Ingresos</th>
+            <th class="py-space-xs pr-space-sm text-right font-medium">Fijos</th>
+            <th class="py-space-xs pr-space-sm text-right font-medium">Variables</th>
+            <th class="py-space-xs pr-space-sm text-right font-medium">Deudas</th>
+            <th class="py-space-xs pr-space-sm text-right font-medium">Ahorro</th>
+            <th class="py-space-xs text-right font-medium">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of resumenes(); track r.month.getTime()) {
+            <tr class="border-b border-surface-container">
+              <td class="py-space-xs pr-space-sm whitespace-nowrap">{{ monthLabel(r.month) }}</td>
+              <td class="py-space-xs pr-space-sm text-right">{{ r.ingresos | money }}</td>
+              <td class="py-space-xs pr-space-sm text-right">{{ r.fijos | money }}</td>
+              <td class="py-space-xs pr-space-sm text-right">{{ r.variables | money }}</td>
+              <td class="py-space-xs pr-space-sm text-right">{{ r.deudas | money }}</td>
+              <td class="py-space-xs pr-space-sm text-right">{{ r.ahorro | money }}</td>
+              <td class="py-space-xs text-right font-semibold" [class.text-error]="r.balance < 0">{{ r.balance | money }}</td>
+            </tr>
+          }
+          <tr class="font-semibold">
+            <td class="py-space-xs pr-space-sm">Total</td>
+            <td class="py-space-xs pr-space-sm text-right">{{ t.ingresos | money }}</td>
+            <td class="py-space-xs pr-space-sm text-right">{{ t.fijos | money }}</td>
+            <td class="py-space-xs pr-space-sm text-right">{{ t.variables | money }}</td>
+            <td class="py-space-xs pr-space-sm text-right">{{ t.deudas | money }}</td>
+            <td class="py-space-xs pr-space-sm text-right">{{ t.ahorro | money }}</td>
+            <td class="py-space-xs text-right" [class.text-error]="t.balance < 0">{{ t.balance | money }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Movimientos -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between px-space-xs">
+      <h2 class="text-headline-sm">Movimientos del período</h2>
+      <span class="rounded-full bg-surface-container px-2 py-0.5 font-mono text-label-micro text-on-surface-variant">{{ movFiltrados().length }} registros</span>
+    </div>
+    <div class="no-scrollbar -mx-margin flex gap-space-xs overflow-x-auto px-margin">
+      @for (f of filtros; track f.key) {
+        <button
+          type="button"
+          class="flex-shrink-0 rounded-full px-space-md py-space-xs text-body-md whitespace-nowrap transition-colors"
+          [class]="filtro() === f.key ? 'bg-primary text-on-primary font-semibold' : 'bg-surface-container text-on-surface hover:bg-surface-container-high'"
+          (click)="filtro.set(f.key); verTodos.set(false)"
+        >
+          {{ f.label }} ({{ conteo()[f.key] ?? 0 }})
+        </button>
+      }
+    </div>
+    <div class="card flex flex-col divide-y divide-surface-container">
+      @for (m of movVisibles(); track m.clave) {
+        <div class="flex items-center justify-between gap-space-sm p-space-md">
+          <div class="flex min-w-0 items-center gap-space-sm">
+            <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full" [class]="m.monto >= 0 ? 'bg-secondary-container/40 text-secondary' : 'bg-surface-container text-on-surface-variant'">
+              <span class="material-symbols-outlined text-[18px]">{{ iconFor(m.titulo, m.etiqueta) }}</span>
+            </div>
+            <div class="flex min-w-0 flex-col">
+              <span class="truncate text-body-md font-medium">{{ m.titulo }}</span>
+              <span class="truncate font-mono text-label-micro text-on-surface-variant">{{ fecha(m.fecha) }} · {{ m.etiqueta }}</span>
+            </div>
+          </div>
+          <span class="flex-shrink-0 font-mono text-numeric-table font-semibold" [class.text-secondary]="m.monto >= 0">{{ m.monto | money: true }}</span>
+        </div>
+      } @empty {
+        <div class="p-space-md text-body-md text-on-surface-variant">No hay movimientos en este período.</div>
+      }
+      @if (!verTodos() && movFiltrados().length > movVisibles().length) {
+        <button type="button" class="p-space-md text-label-md font-semibold text-secondary hover:bg-surface-container-low" (click)="verTodos.set(true)">
+          Ver los {{ movFiltrados().length }} movimientos
+        </button>
+      }
+    </div>
+  </section>
+</div>

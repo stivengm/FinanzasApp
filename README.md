@@ -12,8 +12,11 @@ Aplicación web en **Angular 21** para llevar finanzas personales sobre una hoja
 | `/gastos` | Gastos variables con búsqueda, filtros por categoría y promedio diario |
 | `/deudas` | Préstamos (crédito o persona) con o sin interés y tarjetas de crédito: cuotas, abonos, pagos, compras e historial |
 | `/sheets` | Analítica (tasa de ahorro, distribución, evolución trimestral) y hub de sincronización |
+| `/consulta` | Consulta de varios meses de la cuenta en sesión: ingresos vs egresos, composición de egresos, ingresos por fuente, gastos por categoría, fijos, deudas, tabla mes a mes, movimientos y descarga CSV |
 | `/ingresar` | Ingreso y registro con usuario o correo + clave (y modo demo) |
 | `/perfil` | Nombre, tipo de salario (fijo o variable), salario, fecha de ingreso y cierre de sesión |
+
+Todas las secciones están en el menú lateral (☰); la barra inferior mantiene las seis principales.
 
 ## Ejecutar
 
