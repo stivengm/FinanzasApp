@@ -145,3 +145,21 @@
 .no-scrollbar {
   scrollbar-width: none;
 }
+
+/*
+ * iOS hace zoom al enfocar un campo con letra menor a 16px. En pantallas táctiles los campos
+ * usan 16px (fuera de las capas para ganarle a las utilidades de tamaño). No se bloquea el
+ * zoom con los dedos, que sigue disponible por accesibilidad.
+ */
+@media (pointer: coarse), (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
