@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 import { ApiService, SesionExpiradaError, WriteValues } from './api.service';
 import { addMonths, endOfMonth, monthsBetween, sameMonth, startOfMonth, toIsoDate } from './dates';
 import { DEMO_PERFIL, demoTables } from './demo-data';
-import { Fijo, FijoMes, Gasto, Ingreso, MetaAhorro, Movimiento, Pago, Perfil, SheetTable, TAB_LABELS, TabKey } from './models';
+import { EstadoDeuda, estadoDeuda } from './deudas';
+import { Abono, Deuda, Fijo, FijoMes, Gasto, Ingreso, MetaAhorro, Movimiento, Pago, Perfil, SheetTable, TAB_LABELS, TabKey, TipoAbono } from './models';
 import { DIAS_SEMESTRE, calcularPrima, desgloseSalario, semestreDe } from './nomina';
 import { mapRows, normalize, toDate, toNumber, toText } from './parse';
 import { SessionService } from './session.service';
@@ -15,6 +16,8 @@ export interface MonthSummary {
   ingresos: number;
   fijos: number;
   variables: number;
+  /** Pagos a deudas (cuotas y abonos) del mes. */
+  deudas: number;
   ahorro: number;
   gastos: number;
   balance: number;
@@ -109,6 +112,32 @@ export class FinanceStore {
   readonly fijos = computed(() => this.mapFijos(this.tables().fijos));
   readonly pagos = computed(() => this.mapPagos(this.tables().pagos));
   readonly gastos = computed(() => this.mapGastos(this.tables().gastos));
+  readonly deudas = computed(() => this.mapDeudas(this.tables().deudas));
+  /** Abonos enlazados a su deuda (por ID, o por nombre si la fila no trae ID). */
+  readonly abonos = computed(() => {
+    const porNombre = new Map(this.deudas().map((d) => [normalize(d.nombre), d.id]));
+    return this.mapAbonos(this.tables().abonos).map((a) => (a.deudaId ? a : { ...a, deudaId: porNombre.get(normalize(a.deuda)) ?? '' }));
+  });
+  /** Estado de cada deuda al cierre del mes seleccionado (las que ya existían ese mes). */
+  readonly estadosDeuda = computed<EstadoDeuda[]>(() => {
+    const fin = endOfMonth(this.month());
+    return this.deudas()
+      .filter((d) => !d.fecha || d.fecha <= fin)
+      .map((d) => estadoDeuda(d, this.abonos(), fin));
+  });
+  readonly resumenDeudas = computed(() => {
+    const estados = this.estadosDeuda();
+    const activas = estados.filter((e) => !e.pagada);
+    return {
+      saldo: activas.reduce((s, e) => s + e.saldo, 0),
+      prestado: estados.reduce((s, e) => s + e.deuda.monto, 0),
+      capitalPagado: estados.reduce((s, e) => s + e.capitalPagado, 0),
+      pagadoMes: estados.reduce((s, e) => s + e.pagadoMes, 0),
+      interesMes: activas.reduce((s, e) => s + e.interesMes, 0),
+      activas: activas.length,
+      pagadas: estados.length - activas.length,
+    };
+  });
 
   readonly ingresosMes = computed(() => this.ingresosFor(this.month()));
   readonly gastosMes = computed(() =>
@@ -172,6 +201,15 @@ export class FinanceStore {
         monto: esSalario(i) ? desgloseSalario(i.monto).neto : i.monto,
         fila: i.row,
         pestana: TAB_LABELS.ingresos,
+      })),
+      ...this.abonos().map((a) => ({
+        tipo: 'deuda' as const,
+        titulo: `Pago deuda · ${a.deuda}`,
+        fecha: a.fecha,
+        etiqueta: a.tipo || 'Abono',
+        monto: -a.monto,
+        fila: a.row,
+        pestana: TAB_LABELS.abonos,
       })),
       ...this.pagos().map((p) => ({
         tipo: 'fijo' as const,
@@ -310,6 +348,30 @@ export class FinanceStore {
     });
   }
 
+  addDeuda(d: Omit<Deuda, 'row' | 'id'>): Promise<void> {
+    const id = `D${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    return this.write('deudas', {
+      ID: id,
+      Deuda: d.nombre,
+      Acreedor: d.acreedor,
+      Monto: d.monto,
+      Fecha: toIsoDate(d.fecha ?? new Date()),
+      'Interés Mensual': d.tasaMensual,
+      'Cuota Mensual': d.cuota,
+    });
+  }
+
+  addAbono(a: { deuda: Deuda; tipo: TipoAbono; monto: number; fecha: Date; nota: string }): Promise<void> {
+    return this.write('abonos', {
+      Fecha: toIsoDate(a.fecha),
+      'Deuda ID': a.deuda.id,
+      Deuda: a.deuda.nombre,
+      Tipo: a.tipo,
+      Monto: a.monto,
+      Nota: a.nota,
+    });
+  }
+
   marcarPagado(item: FijoMes, monto = item.fijo.monto): Promise<void> {
     const today = new Date();
     const fecha = sameMonth(today, this.month()) ? today : item.vence;
@@ -425,9 +487,12 @@ export class FinanceStore {
     const variables = this.gastos()
       .filter((g) => sameMonth(g.fecha, month))
       .reduce((s, g) => s + g.monto, 0);
+    const deudas = this.abonos()
+      .filter((a) => sameMonth(a.fecha, month))
+      .reduce((s, a) => s + a.monto, 0);
     const ahorro = this.metas().reduce((s, m) => s + m.aporteMensual, 0);
-    const gastos = fijos + variables;
-    return { month, ingresos, fijos, variables, ahorro, gastos, balance: ingresos - gastos - ahorro };
+    const gastos = fijos + variables + deudas;
+    return { month, ingresos, fijos, variables, deudas, ahorro, gastos, balance: ingresos - gastos - ahorro };
   }
 
   // ---------- Mapeo de pestañas ----------
@@ -525,6 +590,67 @@ export class FinanceStore {
         const servicio = toText(get('servicio'));
         if (!servicio) return null;
         return { row, fecha: toDate(get('fecha')), servicio, monto: Math.abs(toNumber(get('monto'))) };
+      },
+    );
+  }
+
+  private mapDeudas(t?: SheetTable): Deuda[] {
+    if (!t) return [];
+    return mapRows(
+      t,
+      {
+        id: ['id', 'codigo'],
+        nombre: ['deuda', 'nombre', 'concepto', 'descripcion'],
+        acreedor: ['acreedor', 'entidad', 'banco', 'prestamista'],
+        monto: ['monto', 'monto inicial', 'valor', 'capital', 'total'],
+        fecha: ['fecha', 'fecha inicio'],
+        tasa: ['interes mensual', 'interes', 'tasa mensual', 'tasa'],
+        cuota: ['cuota mensual', 'cuota'],
+      },
+      (get, row) => {
+        const nombre = toText(get('nombre'));
+        if (!nombre) return null;
+        let tasa = Math.abs(toNumber(get('tasa')));
+        // Si en la hoja se escribió con formato de porcentaje (1,8% → 0,018), se pasa a puntos porcentuales.
+        if (tasa > 0 && tasa < 0.1) tasa *= 100;
+        return {
+          row,
+          id: toText(get('id')) || `fila-${row}`,
+          nombre,
+          acreedor: toText(get('acreedor')),
+          monto: Math.abs(toNumber(get('monto'))),
+          fecha: toDate(get('fecha')),
+          tasaMensual: tasa,
+          cuota: Math.abs(toNumber(get('cuota'))),
+        };
+      },
+    );
+  }
+
+  private mapAbonos(t?: SheetTable): Abono[] {
+    if (!t) return [];
+    return mapRows(
+      t,
+      {
+        fecha: ['fecha'],
+        deudaId: ['deuda id', 'id deuda', 'id'],
+        deuda: ['deuda', 'nombre'],
+        tipo: ['tipo'],
+        monto: MONTO,
+        nota: ['nota', 'razon', 'motivo', 'descripcion'],
+      },
+      (get, row) => {
+        const monto = Math.abs(toNumber(get('monto')));
+        if (!monto) return null;
+        return {
+          row,
+          fecha: toDate(get('fecha')),
+          deudaId: toText(get('deudaId')),
+          deuda: toText(get('deuda')),
+          tipo: toText(get('tipo')) || 'Abono',
+          monto,
+          nota: toText(get('nota')),
+        };
       },
     );
   }

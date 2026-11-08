@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { endOfMonth, sameMonth, toIsoDate } from './dates';
 import type { PrimaSugerida } from './finance.store';
 
-export type FormKind = 'gasto' | 'ingreso' | 'fijo' | 'meta' | 'salario' | 'prima';
+export type FormKind = 'gasto' | 'ingreso' | 'fijo' | 'meta' | 'salario' | 'prima' | 'deuda' | 'abono';
 
 @Injectable({ providedIn: 'root' })
 export class UiService {
@@ -37,6 +37,17 @@ export class UiService {
       mes: prima.mes,
       inicioSemestre: toIsoDate(prima.semestre.inicio),
       finSemestre: toIsoDate(prima.semestre.fin),
+    });
+  }
+
+  /** Abre el registro de un pago a una deuda, con la cuota pactada como monto sugerido. */
+  openAbono(deuda: { id: string; cuota: number }): void {
+    this.open('abono', {
+      deudaId: deuda.id,
+      tipo: deuda.cuota > 0 ? 'Cuota' : 'Abono a capital',
+      monto: deuda.cuota > 0 ? deuda.cuota : null,
+      fecha: toIsoDate(new Date()),
+      nota: '',
     });
   }
 

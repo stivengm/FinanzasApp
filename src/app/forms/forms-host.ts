@@ -2,7 +2,9 @@ import { Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { toIsoDate } from '../core/dates';
+import { endOfMonth, toIsoDate } from '../core/dates';
+import { estadoDeuda, interesDelMes, mesesParaPagar, tasaMensualDesdeEA } from '../core/deudas';
+import { TipoAbono } from '../core/models';
 import { FinanceStore } from '../core/finance.store';
 import { DIAS_SEMESTRE, calcularPrima, desgloseSalario } from '../core/nomina';
 import { toDate } from '../core/parse';
@@ -33,7 +35,15 @@ const TITLES: Record<FormKind, string> = {
   meta: 'Nuevo objetivo de ahorro',
   salario: 'Salario del mes',
   prima: 'Prima de servicios',
+  deuda: 'Nueva deuda',
+  abono: 'Registrar pago de deuda',
 };
+
+const TIPOS_ABONO: { valor: TipoAbono; detalle: string }[] = [
+  { valor: 'Cuota', detalle: 'Pago de la cuota del mes' },
+  { valor: 'Abono a capital', detalle: 'Pago extra para bajar la deuda' },
+  { valor: 'Pago total', detalle: 'Saldar todo lo que falta' },
+];
 
 @Component({
   selector: 'app-forms-host',
@@ -119,7 +129,61 @@ export class FormsHost {
     return { dias, monto, valido: dias > 0 && hasta >= desde };
   });
 
+  /** Deuda: con o sin interés; la tasa puede venir mensual o efectiva anual (E.A.). */
+  protected readonly deuda = this.fb.group({
+    nombre: ['', Validators.required],
+    acreedor: [''],
+    monto: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    fecha: [toIsoDate(new Date()), Validators.required],
+    conInteres: ['no'],
+    tasa: new FormControl<number | null>(null),
+    tipoTasa: ['mensual'],
+    cuota: new FormControl<number | null>(null),
+  });
+  private readonly deudaValor = toSignal(this.deuda.valueChanges, { initialValue: this.deuda.getRawValue() });
+  protected readonly deudaCalculo = computed(() => {
+    const v = { ...this.deuda.getRawValue(), ...this.deudaValor() };
+    const monto = Number(v.monto) || 0;
+    const tasaIngresada = Number(v.tasa) || 0;
+    const tasaMensual = v.conInteres === 'si' ? (v.tipoTasa === 'ea' ? tasaMensualDesdeEA(tasaIngresada) : tasaIngresada) : 0;
+    const cuota = Number(v.cuota) || 0;
+    return {
+      tasaMensual,
+      interesPrimerMes: interesDelMes(monto, tasaMensual),
+      meses: cuota > 0 && monto > 0 ? mesesParaPagar(monto, tasaMensual, cuota) : undefined,
+    };
+  });
+
+  /** Pago a una deuda: cuota, abono a capital o pago total, con su razón. */
+  protected readonly tiposAbono = TIPOS_ABONO;
+  protected readonly abono = this.fb.group({
+    deudaId: ['', Validators.required],
+    tipo: ['Cuota'],
+    monto: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    fecha: [toIsoDate(new Date()), Validators.required],
+    nota: [''],
+  });
+  private readonly abonoValor = toSignal(this.abono.valueChanges, { initialValue: this.abono.getRawValue() });
+  protected readonly deudasActivas = computed(() => this.store.estadosDeuda().filter((e) => !e.pagada));
+  /** Simula el pago para mostrar cuánto va a interés, cuánto a capital y el saldo que queda. */
+  protected readonly abonoCalculo = computed(() => {
+    const v = { ...this.abono.getRawValue(), ...this.abonoValor() };
+    const deuda = this.store.deudas().find((d) => d.id === v.deudaId);
+    const fecha = toDate(v.fecha ?? '') ?? new Date();
+    if (!deuda) return null;
+    const saldo = estadoDeuda(deuda, this.store.abonos(), endOfMonth(fecha)).saldo;
+    const monto = Number(v.monto) || 0;
+    const prueba = { row: -1, fecha, deudaId: deuda.id, deuda: deuda.nombre, tipo: v.tipo ?? '', monto, nota: '' };
+    const mov = estadoDeuda(deuda, [...this.store.abonos(), prueba], endOfMonth(fecha)).movimientos.find((m) => m.abono === prueba);
+    return { deuda, saldo, interes: mov?.interes ?? 0, capital: mov?.capital ?? 0, saldoDespues: mov?.saldoDespues ?? saldo, excede: monto > saldo };
+  });
+
   constructor() {
+    // "Pago total" llena el monto con el saldo pendiente.
+    this.abono.controls.tipo.valueChanges.subscribe((tipo) => {
+      if (tipo === 'Pago total') queueMicrotask(() => this.abono.controls.monto.setValue(this.abonoCalculo()?.saldo ?? null));
+    });
+
     // "Semestre completo" fija el período a todo el semestre.
     this.prima.controls.completa.valueChanges.subscribe((completa) => {
       if (completa === 'si') {
@@ -172,6 +236,45 @@ export class FormsHost {
         case 'salario': {
           const v = this.salario.getRawValue();
           await this.store.addSalarioMes(v.monto ?? 0, toDate(v.fecha) ?? new Date());
+          break;
+        }
+        case 'deuda': {
+          const v = this.deuda.getRawValue();
+          if (v.conInteres === 'si' && !(Number(v.tasa) > 0)) {
+            this.ui.notify('Indica el porcentaje de interés o marca "Sin interés"', true);
+            return;
+          }
+          await this.store.addDeuda({
+            nombre: v.nombre.trim(),
+            acreedor: v.acreedor.trim(),
+            monto: v.monto ?? 0,
+            fecha: toDate(v.fecha),
+            tasaMensual: Math.round(this.deudaCalculo().tasaMensual * 10000) / 10000,
+            cuota: Number(v.cuota) || 0,
+          });
+          break;
+        }
+        case 'abono': {
+          const v = this.abono.getRawValue();
+          const calc = this.abonoCalculo();
+          if (!calc) return;
+          if (calc.excede) {
+            this.ui.notify(`El pago supera el saldo pendiente`, true);
+            return;
+          }
+          await this.store.addAbono({
+            deuda: calc.deuda,
+            tipo: v.tipo as TipoAbono,
+            monto: v.monto ?? 0,
+            fecha: toDate(v.fecha) ?? new Date(),
+            nota: v.nota.trim(),
+          });
+          if (calc.saldoDespues <= 0) {
+            form.reset();
+            this.close();
+            this.ui.notify(`¡${calc.deuda.nombre} quedó pagada!`);
+            return;
+          }
           break;
         }
         case 'prima': {

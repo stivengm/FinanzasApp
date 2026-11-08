@@ -207,6 +207,25 @@
     </a>
   }
 
+  <!-- Deudas -->
+  @if (store.resumenDeudas().activas) {
+    <a routerLink="/deudas" class="card flex items-center gap-space-md p-space-md">
+      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-tertiary-fixed/60 text-on-tertiary-fixed">
+        <span class="material-symbols-outlined text-[20px]">account_balance</span>
+      </div>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <span class="font-display text-headline-sm">Deudas</span>
+        <span class="truncate text-body-sm text-on-surface-variant">
+          {{ store.resumenDeudas().activas }} activa{{ store.resumenDeudas().activas === 1 ? '' : 's' }} · pagado este mes {{ store.resumenDeudas().pagadoMes | money }}
+        </span>
+      </div>
+      <div class="flex flex-shrink-0 flex-col items-end">
+        <span class="font-mono text-label-micro text-on-surface-variant">Debes</span>
+        <span class="font-mono text-numeric-table font-bold">{{ store.resumenDeudas().saldo | money }}</span>
+      </div>
+    </a>
+  }
+
   <!-- Próximos vencimientos -->
   <section class="flex flex-col gap-space-sm">
     <div class="flex items-center justify-between px-space-xs">

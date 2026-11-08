@@ -51,7 +51,35 @@ export interface Gasto {
   monto: number;
 }
 
-export type TabKey = 'ingresos' | 'ahorro' | 'fijos' | 'pagos' | 'gastos';
+export interface Deuda {
+  row: number;
+  /** Identificador que enlaza la deuda con sus abonos. */
+  id: string;
+  nombre: string;
+  acreedor: string;
+  /** Monto inicial prestado. */
+  monto: number;
+  fecha: Date | null;
+  /** Interés mensual en % (0 = sin interés). */
+  tasaMensual: number;
+  /** Cuota mensual pactada (opcional, 0 si no hay). */
+  cuota: number;
+}
+
+export type TipoAbono = 'Cuota' | 'Abono a capital' | 'Pago total';
+
+export interface Abono {
+  row: number;
+  fecha: Date | null;
+  deudaId: string;
+  deuda: string;
+  tipo: string;
+  monto: number;
+  /** Razón del pago. */
+  nota: string;
+}
+
+export type TabKey = 'ingresos' | 'ahorro' | 'fijos' | 'pagos' | 'gastos' | 'deudas' | 'abonos';
 
 /** Nombres de las pestañas en la hoja (definidos en plantilla/apps-script.gs). */
 export const TAB_LABELS: Record<TabKey, string> = {
@@ -60,6 +88,8 @@ export const TAB_LABELS: Record<TabKey, string> = {
   fijos: 'Fijos',
   pagos: 'Pagos',
   gastos: 'Gastos',
+  deudas: 'Deudas',
+  abonos: 'Abonos',
 };
 
 export type TipoSalario = 'Fijo' | 'Variable';
@@ -91,7 +121,7 @@ export interface FijoMes {
 }
 
 export interface Movimiento {
-  tipo: 'gasto' | 'ingreso' | 'fijo';
+  tipo: 'gasto' | 'ingreso' | 'fijo' | 'deuda';
   titulo: string;
   fecha: Date | null;
   etiqueta: string;

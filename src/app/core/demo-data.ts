@@ -86,5 +86,21 @@ export function demoTables(): Record<TabKey, SheetTable> {
         [d(-2, 9), 'Regalo aniversario', 'Cena y detalle', 'Celebraciones & Regalos', 'Tarjeta de Crédito', 210000],
       ],
     ),
+    deudas: table(
+      ['ID', 'Deuda', 'Acreedor', 'Monto', 'Fecha', 'Interés Mensual', 'Cuota Mensual'],
+      [
+        ['demo-credito', 'Crédito libre inversión', 'Banco', 5000000, d(-3, 10), 1.8, 450000],
+        ['demo-mama', 'Préstamo de mamá', 'Mamá', 1200000, d(-2, 2), 0, 0],
+      ],
+    ),
+    abonos: table(
+      ['Fecha', 'Deuda ID', 'Deuda', 'Tipo', 'Monto', 'Nota'],
+      [
+        [d(-2, 10), 'demo-credito', 'Crédito libre inversión', 'Cuota', 450000, 'Cuota 1'],
+        [d(-1, 10), 'demo-credito', 'Crédito libre inversión', 'Cuota', 450000, 'Cuota 2'],
+        [d(-1, 25), 'demo-mama', 'Préstamo de mamá', 'Abono a capital', 300000, 'Abono con la prima'],
+        [d(0, Math.min(10, today)), 'demo-credito', 'Crédito libre inversión', 'Cuota', 450000, 'Cuota 3'],
+      ],
+    ),
   };
 }

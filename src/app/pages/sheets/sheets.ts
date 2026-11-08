@@ -44,12 +44,12 @@ export class Sheets {
       .gastosMes()
       .filter((g) => normalize(g.categoria).includes('tarjeta'))
       .reduce((sum, g) => sum + g.monto, 0);
-    const { fijos, variables, ahorro } = this.s();
+    const { fijos, variables, deudas, ahorro } = this.s();
     const items = [
       { label: 'Responsabilidades fijas', hint: 'Servicios, vivienda, seguros', value: fijos, color: '#0f1c2c', text: 'text-on-surface' },
       { label: 'Gastos variables y ocio', hint: 'Restaurantes, compras, eventos', value: variables - tarjetas, color: '#ba1a1a', text: 'text-error' },
       { label: 'Ahorro e inversión', hint: 'Aportes a tus objetivos', value: ahorro, color: '#006c49', text: 'text-secondary' },
-      { label: 'Pago tarjetas y otros', hint: 'Cuotas, intereses', value: tarjetas, color: '#74777d', text: 'text-on-surface-variant' },
+      { label: 'Deudas y tarjetas', hint: 'Abonos a deudas, cuotas de tarjeta', value: tarjetas + deudas, color: '#74777d', text: 'text-on-surface-variant' },
     ];
     const total = items.reduce((sum, i) => sum + i.value, 0);
     let offset = 0;

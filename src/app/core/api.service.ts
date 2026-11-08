@@ -68,7 +68,11 @@ export class ApiService {
     if (!body) throw new Error('El servidor respondió algo inesperado. Revisa la implementación del Apps Script.');
     if (!body.ok) {
       const msg = String(body.error || 'Error desconocido');
-      throw msg.startsWith('Sesión expirada') ? new SesionExpiradaError(msg) : new Error(msg);
+      if (msg.startsWith('Sesión expirada')) throw new SesionExpiradaError(msg);
+      if (msg.startsWith('Pestaña no permitida')) {
+        throw new Error('El Apps Script publicado es una versión anterior. Publica la nueva versión (Implementar → Gestionar implementaciones).');
+      }
+      throw new Error(msg);
     }
     return body as T;
   }

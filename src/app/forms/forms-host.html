@@ -204,6 +204,135 @@
           <ng-container *ngTemplateOutlet="actions" />
         </form>
       }
+      @case ('deuda') {
+        <form [formGroup]="deuda" (ngSubmit)="submit('deuda')" class="flex flex-col gap-space-md">
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">¿Qué debes?</span>
+            <input class="field" formControlName="nombre" placeholder="Ej. Crédito libre inversión, préstamo de mamá" />
+          </label>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Monto de la deuda</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" placeholder="5000000" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Fecha</span>
+              <input class="field" type="date" formControlName="fecha" />
+            </label>
+          </div>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">¿A quién le debes? (opcional)</span>
+            <input class="field" formControlName="acreedor" placeholder="Banco, persona…" />
+          </label>
+
+          <div class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">¿Esta deuda cobra interés?</span>
+            <div class="grid grid-cols-2 gap-1 rounded-xl bg-surface-container-low p-1" role="radiogroup">
+              @for (op of [{ v: 'no', t: 'Sin interés' }, { v: 'si', t: 'Con interés' }]; track op.v) {
+                <label
+                  class="flex h-9 cursor-pointer items-center justify-center rounded-lg text-body-md transition-all"
+                  [class]="deuda.controls.conInteres.value === op.v ? 'bg-primary font-semibold text-on-primary shadow-sm' : 'text-on-surface-variant'"
+                >
+                  <input type="radio" class="sr-only" formControlName="conInteres" [value]="op.v" [attr.aria-label]="op.t" />{{ op.t }}
+                </label>
+              }
+            </div>
+          </div>
+
+          @if (deuda.controls.conInteres.value === 'si') {
+            <div class="grid grid-cols-2 gap-space-sm">
+              <label class="flex flex-col gap-space-xs">
+                <span class="text-label-md text-on-surface-variant">Interés (%)</span>
+                <input class="field font-mono" type="number" min="0" step="0.01" inputmode="decimal" formControlName="tasa" placeholder="1.8" />
+              </label>
+              <label class="flex flex-col gap-space-xs">
+                <span class="text-label-md text-on-surface-variant">Tipo de tasa</span>
+                <select class="field" formControlName="tipoTasa">
+                  <option value="mensual">Mensual</option>
+                  <option value="ea">Efectiva anual (E.A.)</option>
+                </select>
+              </label>
+            </div>
+          } @else {
+            <p class="text-body-sm text-on-surface-variant">Sin interés: pagas lo que debes, con cuotas o abonos cuando puedas.</p>
+          }
+
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Cuota mensual pactada (opcional)</span>
+            <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="cuota" />
+          </label>
+
+          @if (deuda.controls.conInteres.value === 'si' && deudaCalculo().tasaMensual > 0) {
+            <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
+              <div class="flex justify-between"><span class="text-on-surface-variant">Tasa mensual</span><span>{{ deudaCalculo().tasaMensual.toFixed(2) }}%</span></div>
+              <div class="flex justify-between text-error"><span>Interés del primer mes</span><span>{{ deudaCalculo().interesPrimerMes | money }}</span></div>
+            </div>
+          }
+          @if (deudaCalculo().meses === null) {
+            <p class="rounded-lg bg-error-container/50 p-space-sm text-body-sm text-on-error-container">La cuota no alcanza a cubrir el interés: la deuda crecería cada mes.</p>
+          } @else if (deudaCalculo().meses) {
+            <p class="text-body-sm text-on-surface-variant">Con esa cuota terminas de pagar en <b>{{ deudaCalculo().meses }} meses</b>.</p>
+          }
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
+      @case ('abono') {
+        <form [formGroup]="abono" (ngSubmit)="submit('abono')" class="flex flex-col gap-space-md">
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Deuda</span>
+            <select class="field" formControlName="deudaId">
+              <option value="" disabled>Elige una deuda</option>
+              @for (e of deudasActivas(); track e.deuda.id) {
+                <option [value]="e.deuda.id">{{ e.deuda.nombre }} · debes {{ e.saldo | money }}</option>
+              }
+            </select>
+          </label>
+          <div class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Tipo de pago</span>
+            <div class="grid grid-cols-3 gap-space-xs" role="radiogroup">
+              @for (t of tiposAbono; track t.valor) {
+                <label
+                  class="flex cursor-pointer flex-col items-center justify-center rounded-lg border p-space-xs text-center text-body-sm transition-all"
+                  [class]="abono.controls.tipo.value === t.valor ? 'border-primary-container bg-primary-container font-semibold text-white' : 'border-outline-variant'"
+                  [title]="t.detalle"
+                >
+                  <input type="radio" class="sr-only" formControlName="tipo" [value]="t.valor" [attr.aria-label]="t.valor + ': ' + t.detalle" />{{ t.valor }}
+                </label>
+              }
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Monto</span>
+              <input class="field font-mono" type="number" min="0" inputmode="numeric" formControlName="monto" />
+            </label>
+            <label class="flex flex-col gap-space-xs">
+              <span class="text-label-md text-on-surface-variant">Fecha</span>
+              <input class="field" type="date" formControlName="fecha" />
+            </label>
+          </div>
+          <label class="flex flex-col gap-space-xs">
+            <span class="text-label-md text-on-surface-variant">Razón (opcional)</span>
+            <input class="field" formControlName="nota" placeholder="Ej. Cuota de noviembre, abono con la prima" />
+          </label>
+          @if (abonoCalculo(); as c) {
+            <div class="flex flex-col gap-1 rounded-lg bg-surface-container-low p-space-md font-mono text-numeric-table">
+              <div class="flex justify-between"><span class="text-on-surface-variant">Debes hoy</span><span>{{ c.saldo | money }}</span></div>
+              @if (c.interes > 0) {
+                <div class="flex justify-between text-error"><span>Va a intereses</span><span>{{ c.interes | money }}</span></div>
+              }
+              <div class="flex justify-between text-secondary"><span>Baja la deuda</span><span>{{ c.capital | money }}</span></div>
+              <div class="mt-1 flex justify-between border-t border-outline-variant pt-space-xs font-bold">
+                <span>Quedarías debiendo</span><span>{{ c.saldoDespues | money }}</span>
+              </div>
+            </div>
+            @if (c.excede) {
+              <p class="rounded-lg bg-error-container/50 p-space-sm text-body-sm text-on-error-container">El pago supera lo que debes ({{ c.saldo | money }}).</p>
+            }
+          }
+          <ng-container *ngTemplateOutlet="actions" />
+        </form>
+      }
     }
   </app-bottom-sheet>
 }

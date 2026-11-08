@@ -14,8 +14,10 @@ const HOJAS = {
   fijos: { nombre: 'Fijos', columnas: ['Usuario', 'Servicio', 'Proveedor', 'Categoría', 'Frecuencia', 'Día de Pago', 'Monto'] },
   pagos: { nombre: 'Pagos', columnas: ['Usuario', 'Fecha', 'Servicio', 'Monto'] },
   gastos: { nombre: 'Gastos', columnas: ['Usuario', 'Fecha', 'Descripción', 'Detalle', 'Categoría', 'Método de Pago', 'Monto'] },
+  deudas: { nombre: 'Deudas', columnas: ['Usuario', 'ID', 'Deuda', 'Acreedor', 'Monto', 'Fecha', 'Interés Mensual', 'Cuota Mensual'] },
+  abonos: { nombre: 'Abonos', columnas: ['Usuario', 'Fecha', 'Deuda ID', 'Deuda', 'Tipo', 'Monto', 'Nota'] },
 };
-const DATOS = ['ingresos', 'ahorro', 'fijos', 'pagos', 'gastos'];
+const DATOS = ['ingresos', 'ahorro', 'fijos', 'pagos', 'gastos', 'deudas', 'abonos'];
 
 /** Ejecútala una vez desde el editor: crea las pestañas y pide los permisos. */
 function configurar() {

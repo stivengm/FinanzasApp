@@ -23,6 +23,7 @@ export class Shell {
     { path: '/ingresos', icon: 'savings', label: 'Ingresos' },
     { path: '/fijos', icon: 'receipt_long', label: 'Fijos' },
     { path: '/gastos', icon: 'shopping_bag', label: 'Gastos' },
+    { path: '/deudas', icon: 'account_balance', label: 'Deudas' },
     { path: '/sheets', icon: 'query_stats', label: 'Sheets' },
   ];
 

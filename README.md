@@ -10,6 +10,7 @@ Aplicación web en **Angular 21** para llevar finanzas personales sobre una hoja
 | `/ingresos` | Salario mensual, prima sugerida, ingresos extra del mes, bóveda de ahorro y remanente |
 | `/fijos` | Responsabilidades fijas con estado pagado / pendiente / programado |
 | `/gastos` | Gastos variables con búsqueda, filtros por categoría y promedio diario |
+| `/deudas` | Deudas con o sin interés, cuotas, abonos a capital, pago total e historial |
 | `/sheets` | Analítica (tasa de ahorro, distribución, evolución trimestral) y hub de sincronización |
 | `/ingresar` | Ingreso y registro con usuario o correo + clave (y modo demo) |
 | `/perfil` | Nombre, tipo de salario (fijo o variable), salario, fecha de ingreso y cierre de sesión |
@@ -20,6 +21,7 @@ Aplicación web en **Angular 21** para llevar finanzas personales sobre una hoja
 npm install
 npm start          # http://localhost:4200
 npm test           # pruebas unitarias (Vitest)
+npm run test:script  # pruebas del Apps Script con una hoja simulada
 npm run build      # build de producción en dist/
 ```
 
@@ -46,7 +48,7 @@ La app no lee la hoja directamente: habla con un **Apps Script** publicado como 
 ## Usuarios
 
 - Cualquiera con la URL de la app puede **crear su cuenta** con usuario o correo y clave (mín. 4 caracteres).
-- Las cuentas quedan en la pestaña `Usuarios` en texto plano (Usuario, Clave, Nombre, Salario, Token, Registrado). El script nunca devuelve la clave a la app.
+- Las cuentas quedan en la pestaña `Usuarios` en texto plano (Usuario, Clave, Nombre, Salario, Token, Registrado, Tipo Salario, Fecha Ingreso). El script nunca devuelve la clave a la app.
 - Todas las pestañas de datos tienen la columna `Usuario`; el script solo lee y escribe las filas del usuario autenticado.
 
 ## Estructura de la hoja
@@ -59,6 +61,8 @@ La app no lee la hoja directamente: habla con un **Apps Script** publicado como 
 | `Fijos` | Usuario · Servicio · Proveedor · Categoría · Frecuencia (Mensual/Bimestral/…) · Día de Pago · Monto |
 | `Pagos` | Usuario · Fecha · Servicio · Monto — un registro por cada pago de un fijo |
 | `Gastos` | Usuario · Fecha · Descripción · Detalle · Categoría · Método de Pago · Monto |
+| `Deudas` | Usuario · ID · Deuda · Acreedor · Monto · Fecha · Interés Mensual (%, 0 = sin interés) · Cuota Mensual |
+| `Abonos` | Usuario · Fecha · Deuda ID · Deuda · Tipo (Cuota/Abono a capital/Pago total) · Monto · Nota (razón) |
 
 Reglas de cálculo:
 
@@ -73,7 +77,11 @@ Reglas de cálculo:
   - Al registrarla se pregunta si el semestre fue completo o desde/hasta qué fecha, y se recalcula.
   - Base: el salario fijo, o el **promedio** del salario variable registrado en el semestre.
 - Un fijo está **pagado** en un mes si existe una fila en `Pagos` con el mismo servicio en ese mes. Los fijos bimestrales, trimestrales, etc. se programan a partir de su último pago.
-- **Balance disponible** = ingresos − (fijos + gastos variables) − aportes mensuales de ahorro.
+- **Deudas**:
+  - Sin interés: el saldo baja exactamente lo que se paga.
+  - Con interés: desde el mes siguiente al préstamo, cada mes se suma el interés sobre el saldo de inicio de mes (la tasa E.A. se convierte a mensual al crearla). Cada pago cubre primero el interés pendiente y el resto baja el capital.
+  - Con cuota pactada, la app estima los meses que faltan o avisa si la cuota no cubre el interés.
+- **Balance disponible** = ingresos − (fijos + gastos variables + pagos a deudas) − aportes mensuales de ahorro.
 
 ## Arquitectura
 
@@ -81,10 +89,10 @@ Reglas de cálculo:
 src/app/
   core/        sesión (localStorage), cliente del Apps Script, store con signals, parseo
   layout/      shell: header, navegación inferior, toasts
-  forms/       formularios en hoja inferior (gasto, ingreso, fijo, meta)
-  pages/       ingresar, perfil, inicio, ingresos, fijos, gastos, sheets
+  forms/       formularios en hoja inferior (gasto, ingreso, fijo, meta, salario, prima, deuda, pago)
+  pages/       ingresar, perfil, inicio, ingresos, fijos, gastos, deudas, sheets
   shared/      pipe de moneda COP, selector de mes, iconos por categoría
-plantilla/     plantilla .xlsx y backend en Apps Script
+plantilla/     plantilla .xlsx (generar-plantilla.py), backend en Apps Script y sus pruebas
 app.settings.ts  URL del Apps Script
 ```
 

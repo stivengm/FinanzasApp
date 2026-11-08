@@ -1,0 +1,168 @@
+<div class="flex flex-col gap-space-lg">
+  <div class="flex flex-wrap items-end justify-between gap-space-sm pt-space-xs">
+    <div class="flex flex-col">
+      <span class="font-mono text-label-micro tracking-wider text-on-surface-variant uppercase">Control de obligaciones</span>
+      <h1 class="text-headline-lg">Deudas</h1>
+    </div>
+    <app-month-picker />
+  </div>
+
+  <!-- Resumen -->
+  <div class="flex flex-col gap-space-md rounded-xl bg-primary-container p-space-lg text-white shadow-md">
+    <div class="flex items-start justify-between gap-space-sm">
+      <div class="flex flex-col">
+        <span class="text-label-md tracking-wider text-primary-fixed-dim uppercase">Total que debes</span>
+        <span class="font-display text-numeric-hero font-bold">{{ r().saldo | money }}</span>
+        <span class="font-mono text-label-micro text-on-primary-container">
+          {{ r().activas }} {{ r().activas === 1 ? 'deuda activa' : 'deudas activas' }}{{ r().pagadas ? ' · ' + r().pagadas + ' pagada' + (r().pagadas === 1 ? '' : 's') : '' }}
+        </span>
+      </div>
+      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-white/10">
+        <span class="material-symbols-outlined">account_balance</span>
+      </div>
+    </div>
+    @if (r().prestado) {
+      <div class="flex flex-col gap-space-xs">
+        <div class="flex justify-between font-mono text-label-micro text-on-primary-container">
+          <span>Capital pagado</span><span class="text-secondary-fixed-dim">{{ progreso() }}%</span>
+        </div>
+        <div class="h-2 overflow-hidden rounded-full bg-white/10">
+          <div class="h-full rounded-full bg-secondary-fixed-dim transition-all duration-700" [style.width.%]="progreso()"></div>
+        </div>
+      </div>
+    }
+    <div class="grid grid-cols-2 gap-space-xs rounded-lg bg-black/20 p-space-sm">
+      <div class="flex flex-col">
+        <span class="font-mono text-label-micro text-primary-fixed-dim">Pagado este mes</span>
+        <span class="font-mono text-numeric-table font-bold text-secondary-fixed">{{ r().pagadoMes | money }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-mono text-label-micro text-primary-fixed-dim">Intereses del mes</span>
+        <span class="font-mono text-numeric-table font-bold text-tertiary-fixed-dim">{{ r().interesMes | money }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-space-sm">
+    <button type="button" class="flex h-12 items-center justify-center gap-space-xs rounded-lg bg-primary text-label-md font-semibold text-on-primary transition-all active:scale-[0.98]" (click)="ui.open('deuda')">
+      <span class="material-symbols-outlined text-[20px]">add_circle</span> Agregar deuda
+    </button>
+    <button
+      type="button"
+      class="flex h-12 items-center justify-center gap-space-xs rounded-lg bg-surface-container text-label-md font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
+      [disabled]="!r().activas"
+      (click)="registrarPago()"
+    >
+      <span class="material-symbols-outlined text-[20px] text-secondary">payments</span> Registrar pago
+    </button>
+  </div>
+
+  <!-- Lista -->
+  <section class="flex flex-col gap-space-sm">
+    @for (e of lista(); track e.deuda.id) {
+      <div class="card flex flex-col gap-space-sm p-space-md" [class.opacity-70]="e.pagada">
+        <div class="flex items-start justify-between gap-space-sm">
+          <div class="flex min-w-0 items-center gap-space-sm">
+            <div
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg"
+              [class]="e.pagada ? 'bg-secondary-container/50 text-secondary' : 'bg-tertiary-fixed/60 text-on-tertiary-fixed'"
+            >
+              <span class="material-symbols-outlined text-[20px]">{{ e.pagada ? 'task_alt' : 'request_quote' }}</span>
+            </div>
+            <div class="flex min-w-0 flex-col">
+              <span class="text-body-lg font-semibold">{{ e.deuda.nombre }}</span>
+              <span class="truncate text-body-sm text-on-surface-variant">
+                {{ e.deuda.acreedor || 'Sin acreedor' }} · desde {{ fecha(e.deuda.fecha) }}
+              </span>
+            </div>
+          </div>
+          @if (e.pagada) {
+            <span class="flex-shrink-0 rounded-full bg-secondary-container/60 px-2 py-0.5 font-mono text-label-micro text-on-secondary-container uppercase">Pagada</span>
+          } @else {
+            <span
+              class="flex-shrink-0 rounded-full px-2 py-0.5 font-mono text-label-micro uppercase"
+              [class]="e.deuda.tasaMensual > 0 ? 'bg-error-container/50 text-error' : 'bg-secondary-container/40 text-on-secondary-container'"
+              >{{ tasa(e) }}</span
+            >
+          }
+        </div>
+
+        <div class="flex items-end justify-between gap-space-sm">
+          <div class="flex flex-col">
+            <span class="font-mono text-label-micro text-on-surface-variant">Debes</span>
+            <span class="font-display text-headline-md font-bold">{{ e.saldo | money }}</span>
+          </div>
+          <span class="font-mono text-label-micro text-on-surface-variant">de {{ e.deuda.monto | money }}</span>
+        </div>
+        <div class="h-1.5 overflow-hidden rounded-full bg-surface-container-high">
+          <div class="h-full rounded-full bg-secondary transition-all duration-700" [style.width.%]="pct(e)"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-space-xs rounded-lg bg-surface-container-low px-space-sm py-space-xs font-mono text-label-micro">
+          <span class="flex flex-col text-on-surface-variant">Cuota<b class="text-on-surface">{{ e.deuda.cuota ? (e.deuda.cuota | money) : '—' }}</b></span>
+          <span class="flex flex-col text-center text-on-surface-variant">Interés mes<b [class]="e.interesMes ? 'text-error' : 'text-on-surface'">{{ e.interesMes | money }}</b></span>
+          <span class="flex flex-col text-right text-on-surface-variant">Pagado mes<b class="text-secondary">{{ e.pagadoMes | money }}</b></span>
+        </div>
+
+        @if (!e.pagada) {
+          @if (e.mesesRestantes === null && e.deuda.cuota > 0) {
+            <p class="text-body-sm text-error">La cuota no alcanza a cubrir el interés: la deuda crece cada mes.</p>
+          } @else if (e.mesesRestantes) {
+            <p class="text-body-sm text-on-surface-variant">Pagando la cuota terminas en <b>{{ e.mesesRestantes }} {{ e.mesesRestantes === 1 ? 'mes' : 'meses' }}</b>.</p>
+          }
+        }
+        @if (e.interesesTotales > 0) {
+          <p class="font-mono text-label-micro text-on-surface-variant">Intereses causados hasta hoy: {{ e.interesesTotales | money }}</p>
+        }
+
+        <div class="flex items-center justify-between gap-space-sm">
+          <button
+            type="button"
+            class="flex items-center gap-1 text-label-md font-semibold text-on-surface-variant disabled:opacity-40"
+            [disabled]="!e.movimientos.length"
+            [attr.aria-expanded]="abiertas().has(e.deuda.id)"
+            (click)="toggle(e.deuda.id)"
+          >
+            <span class="material-symbols-outlined text-[18px] transition-transform" [class.rotate-180]="abiertas().has(e.deuda.id)">expand_more</span>
+            Historial ({{ e.movimientos.length }})
+          </button>
+          @if (!e.pagada) {
+            <button type="button" class="pill-btn bg-secondary-container/50 text-on-secondary-container" (click)="ui.openAbono(e.deuda)">
+              <span class="material-symbols-outlined text-[18px]">add_circle</span> Registrar pago
+            </button>
+          }
+        </div>
+
+        @if (abiertas().has(e.deuda.id)) {
+          <ul class="flex flex-col divide-y divide-surface-container rounded-lg bg-surface-container-low">
+            @for (m of e.movimientos; track m.abono.row) {
+              <li class="flex items-start justify-between gap-space-sm p-space-sm">
+                <div class="flex min-w-0 flex-col">
+                  <span class="text-body-md font-medium">{{ m.abono.tipo }}{{ m.abono.nota ? ' · ' + m.abono.nota : '' }}</span>
+                  <span class="font-mono text-label-micro text-on-surface-variant">
+                    {{ fecha(m.abono.fecha) }}{{ m.interes ? ' · interés ' : '' }}{{ m.interes ? (m.interes | money) : '' }} · capital {{ m.capital | money }}
+                  </span>
+                </div>
+                <div class="flex flex-shrink-0 flex-col items-end">
+                  <span class="font-mono text-numeric-table font-semibold">-{{ m.abono.monto | money }}</span>
+                  <span class="font-mono text-label-micro text-outline">Quedó {{ m.saldoDespues | money }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    } @empty {
+      <div class="card flex flex-col items-center gap-space-sm p-space-lg text-center">
+        <span class="material-symbols-outlined text-[36px] text-secondary">sentiment_satisfied</span>
+        <span class="font-display text-headline-sm">No tienes deudas registradas</span>
+        <span class="text-body-sm text-on-surface-variant">Agrega un préstamo o crédito para llevar sus cuotas, abonos e intereses.</span>
+      </div>
+    }
+  </section>
+
+  <p class="flex items-center justify-center gap-space-xs text-center font-mono text-label-micro text-on-surface-variant">
+    <span class="material-symbols-outlined text-[16px] text-secondary">table_chart</span>
+    Mapeado a pestañas [{{ tabs.deudas }}] y [{{ tabs.abonos }}] en Google Sheets
+  </p>
+</div>
